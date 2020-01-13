@@ -76,6 +76,17 @@ defmodule OMG.Conformance.MerkleProofPropertyTest do
     end
   end
 
+  property "valid proof can't prove at different index",
+           [2500, :verbose, max_size: 256, constraint_tries: 100_000],
+           %{contract: contract} do
+    forall proof <- MerkleProofContext.correct() do
+      forall index <- pos_integer() do
+        not solidity_proof_valid(proof.leaf, index, proof.root_hash, proof.proof, contract) or
+          index == proof.txindex
+      end
+    end
+  end
+
   property "no mutated proof bytes can prove anything that the original proved",
            [2500, :verbose, max_size: 256, constraint_tries: 100_000],
            %{contract: contract} do
