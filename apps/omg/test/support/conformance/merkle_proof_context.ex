@@ -27,8 +27,8 @@ defmodule Support.Conformance.MerkleProofContext do
   A correct context - a proof proves something it should
   """
   def correct() do
-    let leaves <- such_that(leaves <- list(binary()), when: length(leaves) > 0) do
-      leaves_length = length(leaves)
+    let leaves_length <- pos_integer() do
+      leaves = for leaf <- :lists.seq(1, leaves_length), do: :binary.encode_unsigned(leaf)
       root_hash = Merkle.hash(leaves)
 
       let txindex <- integer(0, leaves_length - 1) do
