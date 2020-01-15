@@ -72,15 +72,18 @@ defmodule OMG.Watcher.ExitProcessor.Piggyback do
           | Transaction.decode_error()
           | :no_double_spend_on_particular_piggyback
 
+  @max_inputs 4
+  @max_outputs 4
+
   def get_input_challenge_data(request, state, txbytes, input_index) do
-    case input_index in 0..(Transaction.Payment.max_inputs() - 1) do
+    case input_index in 0..(@max_inputs - 1) do
       true -> get_piggyback_challenge_data(request, state, txbytes, {:input, input_index})
       false -> {:error, :piggybacked_index_out_of_range}
     end
   end
 
   def get_output_challenge_data(request, state, txbytes, output_index) do
-    case output_index in 0..(Transaction.Payment.max_outputs() - 1) do
+    case output_index in 0..(@max_outputs - 1) do
       true -> get_piggyback_challenge_data(request, state, txbytes, {:output, output_index})
       false -> {:error, :piggybacked_index_out_of_range}
     end

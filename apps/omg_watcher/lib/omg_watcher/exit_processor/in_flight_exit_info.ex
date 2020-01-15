@@ -26,8 +26,8 @@ defmodule OMG.Watcher.ExitProcessor.InFlightExitInfo do
   require Transaction
   require Transaction.Payment
 
-  @max_inputs Transaction.Payment.max_inputs()
-  @max_outputs Transaction.Payment.max_outputs()
+  @max_inputs 4
+  @max_outputs 4
   @inputs_index_range 0..(@max_inputs - 1)
   @outputs_index_range 0..(@max_outputs - 1)
 

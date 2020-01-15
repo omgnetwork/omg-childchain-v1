@@ -21,6 +21,8 @@ defmodule OMG.WatcherRPC.Web.Validator.Order do
   alias OMG.WatcherInfo.UtxoSelection
   import OMG.Utils.HttpRPC.Validator.Base
 
+  @max_outputs 4
+
   @doc """
   Parses and validates request body
   """
@@ -45,9 +47,9 @@ defmodule OMG.WatcherRPC.Web.Validator.Order do
     alias OMG.State.Transaction
     require Transaction.Payment
 
-    if length(payments) <= Transaction.Payment.max_outputs(),
+    if length(payments) <= @max_outputs,
       do: {:ok, payments},
-      else: error("payments", {:too_many_payments, Transaction.Payment.max_outputs()})
+      else: error("payments", {:too_many_payments, @max_outputs})
   end
 
   defp parse_payment(raw_payment) do

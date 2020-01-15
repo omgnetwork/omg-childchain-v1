@@ -51,8 +51,8 @@ defmodule OMG.Watcher.ExitProcessor.Core do
   @default_sla_margin 10
   @zero_address OMG.Eth.zero_address()
 
-  @max_inputs Transaction.Payment.max_inputs()
-  @max_outputs Transaction.Payment.max_outputs()
+  @max_inputs 4
+  @max_outputs 4
 
   @type new_in_flight_exit_status_t() :: {tuple(), pos_integer()}
 

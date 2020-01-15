@@ -115,6 +115,9 @@ defmodule Support.Conformance.PropertyGenerators do
   @max_txindex trunc(:math.pow(2, 16) - 1)
   @max_blknum trunc((:math.pow(2, 54) - 1 - @max_txindex) / (@block_offset / @transaction_offset))
 
+  @max_inputs 4
+  @max_outputs 4
+
   defp valid_blknum(), do: integer(0, @max_blknum)
   defp valid_txndex(), do: integer(0, @max_txindex)
   defp valid_oindex(), do: integer(0, @transaction_offset - 1)
@@ -137,11 +140,11 @@ defmodule Support.Conformance.PropertyGenerators do
   end
 
   defp valid_inputs_list() do
-    such_that(l <- list(valid_input_tuple()), when: length(l) <= Transaction.Payment.max_inputs())
+    such_that(l <- list(valid_input_tuple()), when: length(l) <= @max_inputs)
   end
 
   defp valid_outputs_list() do
-    such_that(l <- list(valid_output_tuple()), when: length(l) > 0 && length(l) <= Transaction.Payment.max_outputs())
+    such_that(l <- list(valid_output_tuple()), when: length(l) > 0 && length(l) <= @max_outputs)
   end
 
   defp mutated_hash(base_hash) do

@@ -44,6 +44,9 @@ defmodule OMG.TypedDataHash.Tools do
   @input_type_hash Crypto.hash(@input_encoded_type)
   @output_type_hash Crypto.hash(@output_encoded_type)
 
+  @max_inputs 4
+  @max_outputs 4
+
   @doc """
   Computes Domain Separator `hashStruct(eip712Domain)`,
   @see: http://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator
@@ -86,13 +89,13 @@ defmodule OMG.TypedDataHash.Tools do
       inputs
       |> Stream.map(&hash_input/1)
       |> Stream.concat(Stream.cycle([empty_input_hash]))
-      |> Enum.take(Transaction.Payment.max_inputs())
+      |> Enum.take(@max_inputs)
 
     output_hashes =
       outputs
       |> Stream.map(&hash_output/1)
       |> Stream.concat(Stream.cycle([empty_output_hash]))
-      |> Enum.take(Transaction.Payment.max_outputs())
+      |> Enum.take(@max_ouputs)
 
     tx_data = ABI.TypeEncoder.encode_raw([0], [{:uint, 256}])
     metadata = metadata || <<0::256>>

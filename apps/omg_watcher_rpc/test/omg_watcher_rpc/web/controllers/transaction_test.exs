@@ -36,6 +36,9 @@ defmodule OMG.WatcherRPC.Web.Controller.TransactionTest do
   @other_token_hex Encoding.to_hex(@other_token)
   @default_data_paging %{"limit" => 200, "page" => 1}
 
+  @max_inputs 4
+  @max_outputs 4
+
   describe "/transaction.get" do
     @tag fixtures: [:initial_blocks]
     test "verifies all inserted transactions available to get", %{initial_blocks: initial_blocks} do
@@ -865,7 +868,7 @@ defmodule OMG.WatcherRPC.Web.Controller.TransactionTest do
                  }
                )
 
-      assert OMG.State.Transaction.Payment.max_inputs() == length(transaction["inputs"])
+      assert @max_inputs == length(transaction["inputs"])
     end
 
     @tag fixtures: [:alice, :bob, :more_utxos, :blocks_inserter]
@@ -1110,7 +1113,7 @@ defmodule OMG.WatcherRPC.Web.Controller.TransactionTest do
       WatcherHelper.get_utxos(address)
       |> Stream.filter(&(&1["currency"] == currency))
       |> Enum.sort_by(& &1["amount"], &>=/2)
-      |> Stream.take(Transaction.Payment.max_inputs())
+      |> Stream.take(@max_inputs)
       |> Stream.map(& &1["amount"])
       |> Enum.sum()
     end

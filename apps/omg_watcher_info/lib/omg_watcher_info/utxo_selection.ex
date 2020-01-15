@@ -65,6 +65,9 @@ defmodule OMG.WatcherInfo.UtxoSelection do
 
   @empty_metadata <<0::256>>
 
+  @max_inputs 4
+  @max_outputs 4
+
   @doc """
   Given order finds spender's inputs sufficient to perform a payment.
   If also provided with receiver's address, creates and encodes a transaction.
@@ -81,7 +84,7 @@ defmodule OMG.WatcherInfo.UtxoSelection do
         |> Stream.map(fn {_, utxos} -> length(utxos) end)
         |> Enum.sum()
 
-      if utxo_count <= Transaction.Payment.max_inputs(),
+      if utxo_count <= @max_inputs,
         do: create_transaction(funds, order) |> respond(:complete),
         else: create_merge(owner, funds) |> respond(:intermediate)
     end
@@ -158,7 +161,7 @@ defmodule OMG.WatcherInfo.UtxoSelection do
       |> List.flatten()
 
     cond do
-      Enum.count(outputs) > Transaction.Payment.max_outputs() ->
+      Enum.count(outputs) > @max_outputs ->
         {:error, :too_many_outputs}
 
       Enum.empty?(inputs) ->
@@ -182,7 +185,7 @@ defmodule OMG.WatcherInfo.UtxoSelection do
   defp create_merge(owner, utxos_per_token) do
     utxos_per_token
     |> Enum.map(fn {token, utxos} ->
-      Stream.chunk_every(utxos, Transaction.Payment.max_outputs())
+      Stream.chunk_every(utxos, @max_outputs)
       |> Enum.map(fn
         [_single_input] ->
           # merge not needed
