@@ -394,25 +394,48 @@ defmodule OMG.State.Core do
     {Transaction.get_inputs(tx), utxos_from(tx, blknum, tx_index)}
   end
 
-  defp utxos_from(tx, blknum, tx_index) do
-    hash = Transaction.raw_txhash(tx)
+  defp deposit_to_utxo(%{blknum: blknum, currency: cur, owner: owner, amount: amount}) do
+    %ExPlasma.Utxo{currency: cur, owner: owner, amount: amount}
+    |> ExPlasma.Transactions.Deposit.new()
+    |> utxos_from(blknum, 0)
+    |> Enum.map(& &1)
+    |> hd()
+  end
 
-    tx
-    |> Transaction.get_outputs()
+  defp utxos_from(%ExPlasma.Transactions.Deposit{} = transaction, blknum, tx_index) do
+    hashed_transaction_bytes = 
+      transaction
+      |> ExPlasma.Transaction.encode()
+      |> ExPlasma.Encoding.keccak_hash()
+
+    outputs = Enum.map(transaction.outputs, fn output ->
+      %OMG.Output{
+        output_type: output.output_type,
+        owner: output.owner,
+        currency: output.currency,
+        amount: output.amount
+      }
+    end)
+
+    do_utxos_from({outputs, hashed_transaction_bytes}, blknum, tx_index)
+  end
+
+  defp utxos_from(tx, blknum, tx_index) do
+    hashed_transaction_bytes = Transaction.raw_txhash(tx)
+    outputs = Transaction.get_outputs(tx)
+
+    do_utxos_from({outputs, hashed_transaction_bytes}, blknum, tx_index)
+  end
+
+  defp do_utxos_from({outputs, hashed_transaction_bytes}, blknum, tx_index) do
+    outputs
     |> Enum.with_index()
     |> Enum.map(fn {output, oindex} ->
       {Utxo.position(blknum, tx_index, oindex), output}
     end)
     |> Enum.into(%{}, fn {input_pointer, output} ->
-      {input_pointer, %Utxo{output: output, creating_txhash: hash}}
+      {input_pointer, %Utxo{output: output, creating_txhash: hashed_transaction_bytes}}
     end)
-  end
-
-  defp deposit_to_utxo(%{blknum: blknum, currency: cur, owner: owner, amount: amount}) do
-    Transaction.Payment.new([], [{owner, cur, amount}])
-    |> utxos_from(blknum, 0)
-    |> Enum.map(& &1)
-    |> hd()
   end
 
   # We're looking for a UTXO that a piggyback of an in-flight IFE is referencing.

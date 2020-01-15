@@ -95,7 +95,7 @@ defmodule OMG.TypedDataHash.Tools do
       outputs
       |> Stream.map(&hash_output/1)
       |> Stream.concat(Stream.cycle([empty_output_hash]))
-      |> Enum.take(@max_ouputs)
+      |> Enum.take(@max_outputs)
 
     tx_data = ABI.TypeEncoder.encode_raw([0], [{:uint, 256}])
     metadata = metadata || <<0::256>>
