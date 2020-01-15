@@ -137,21 +137,25 @@ defmodule OMG.Performance.SenderServer do
     change_output = if newamount > 0, do: [{spender.addr, @eth, newamount}], else: []
 
     # create and return signed transaction
-    [{last_tx.blknum, last_tx.txindex, last_tx.oindex}]
-    |> Transaction.Payment.new(change_output ++ recipient_output)
-    |> DevCrypto.sign([spender.priv])
+    inputs = [{last_tx.blknum, last_tx.txindex, last_tx.oindex}]
+    outputs = change_output ++ recipient_output
+    payment = ExPlasma.Transactions.Payment.new(%{inputs: inputs, outputs: outputs})
+    ExPlasma.Transaction.sign(payment, keys: [spender.priv])
   end
 
   # Submits new transaction to the blockchain server.
-  @spec submit_tx(Transaction.Signed.t(), __MODULE__.state()) ::
+  @spec submit_tx(Transaction.Signed.t() | ExPlasma.Transaction.t(), __MODULE__.state()) ::
           {:ok, blknum :: pos_integer, txindex :: pos_integer, newamount :: pos_integer}
           | {:error, any()}
           | :retry
-  defp submit_tx(tx, %__MODULE__{seqnum: seqnum, child_chain_url: child_chain_url}) do
-    result =
-      tx
-      |> Transaction.Signed.encode()
-      |> submit_tx_rpc(child_chain_url)
+  defp submit_tx(%ExPlasma.Transactions.Payment{} = tx, %__MODULE__{seqnum: seqnum, child_chain_url: child_chain_url}),
+    do: do_submit_tx(ExPlasma.Transaction.encode(tx), seqnum, child_chain_url)
+
+  defp submit_tx(tx, %__MODULE__{seqnum: seqnum, child_chain_url: child_chain_url}),
+    do: do_submit_tx(Transaction.Signed.encode(tx), seqnum, child_chain_url)
+
+  defp do_submit_tx(tx, seqnum, child_chain_url) do
+    result = submit_tx_rpc(tx, child_chain_url)
 
     case result do
       {:error, {:client_error, %{"code" => "submit:too_many_transactions_in_block"}}} ->
