@@ -208,21 +208,21 @@ defmodule OMG.WatcherInfo.UtxoSelection do
     if Enum.any?(outputs, &(&1.owner == nil)),
       do: nil,
       else:
-        Transaction.Payment.new(
-          inputs |> Enum.map(&{&1.blknum, &1.txindex, &1.oindex}),
-          outputs |> Enum.map(&{&1.owner, &1.currency, &1.amount}),
-          metadata || @empty_metadata
-        )
+        ExPlasma.Transactions.Payment.new(%{
+          inputs: inputs |> Enum.map(& %ExPlasma.Utxo{blknum: &1.blknum, txindex: &1.txindex, oindex: &1.oindex}),
+          outputs: outputs |> Enum.map(& %ExPlasma.Utxo{owner: &1.owner, currency: &1.currency, amount: &1.amount}),
+          metadata: metadata || @empty_metadata
+        })
   end
 
   defp create_txbytes(tx) do
     with tx when not is_nil(tx) <- tx,
-         do: Transaction.raw_txbytes(tx)
+         do: ExPlasma.Transaction.encode(tx)
   end
 
   defp compute_sign_hash(tx) do
     with tx when not is_nil(tx) <- tx,
-         do: TypedDataHash.hash_struct(tx)
+         do: ExPlasma.TypedData.hash(tx)
   end
 
   defp respond({:ok, transaction}, result), do: {:ok, %{result: result, transactions: [transaction]}}

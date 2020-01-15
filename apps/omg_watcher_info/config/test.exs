@@ -19,3 +19,11 @@ config :omg_watcher_info, OMG.WatcherInfo.Tracer,
   env: "test"
 
 config :omg_watcher_info, environment: :test
+
+config :ex_plasma,
+  eip_712_domain: [
+    name: "OMG Network",
+    salt: "0xfad5c7f626d80f9256ef01929f3beb96e058b8b4b0e3fe52d84f054c0e2a7a83",
+    verifying_contract: "0x0000000000000000000000000000000000000001",
+    version: "1"
+  ]

@@ -29,4 +29,7 @@ config :spandex_ecto, SpandexEcto.EctoLogger,
   tracer: OMG.WatcherInfo.Tracer,
   otp_app: :omg_watcher_info
 
+# TODO(achiurizo)
+# Figure out how to import the verifying contract
+# for the ex_plasma typed_data domain
 import_config "#{Mix.env()}.exs"
