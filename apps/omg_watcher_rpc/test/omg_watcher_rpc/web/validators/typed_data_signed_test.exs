@@ -68,16 +68,21 @@ defmodule OMG.WatcherRPC.Web.Validators.TypedDataSignedTest do
     params = %{"message" => get_message()}
 
     assert {:ok, tx} = TypedDataSigned.parse_transaction(params)
+    %{inputs: inputs, outputs: outputs} = tx
 
-    assert [Utxo.position(1000, 0, 1), Utxo.position(3001, 0, 0)] == Transaction.get_inputs(tx)
+    assert inputs == [
+             %ExPlasma.Utxo{blknum: 1000, txindex: 0, oindex: 1},
+             %ExPlasma.Utxo{blknum: 3001, txindex: 0, oindex: 0}
+           ]
+
     alice_addr = @alice.addr
     bob_addr = @bob.addr
 
-    assert [
-             %{owner: ^alice_addr, currency: @eth, amount: 10},
-             %{owner: ^alice_addr, currency: @other_token, amount: 300},
-             %{owner: ^bob_addr, currency: @other_token, amount: 100}
-           ] = Transaction.get_outputs(tx)
+    assert outputs == [
+             %ExPlasma.Utxo{owner: alice_addr, currency: @eth, amount: 10},
+             %ExPlasma.Utxo{owner: alice_addr, currency: @other_token, amount: 300},
+             %ExPlasma.Utxo{owner: bob_addr, currency: @other_token, amount: 100}
+           ]
 
     assert <<0::256>> == tx.metadata
   end

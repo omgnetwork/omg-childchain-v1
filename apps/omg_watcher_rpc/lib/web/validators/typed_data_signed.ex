@@ -33,8 +33,8 @@ defmodule OMG.WatcherRPC.Web.Validator.TypedDataSigned do
     with {:ok, domain} <- expect(params, "domain", map: &parse_domain/1),
          :ok <- ensure_network_match(domain),
          {:ok, sigs} <- expect(params, "signatures", list: &to_signature/1),
-         {:ok, raw_tx} <- parse_transaction(params) do
-      {:ok, %Transaction.Signed{raw_tx: raw_tx, sigs: sigs}}
+         {:ok, transaction} <- parse_transaction(params) do
+      {:ok, %{transaction | sigs: sigs}}
     end
   end
 
@@ -44,8 +44,18 @@ defmodule OMG.WatcherRPC.Web.Validator.TypedDataSigned do
          inputs when is_list(inputs) <- parse_inputs(msg),
          outputs when is_list(outputs) <- parse_outputs(msg),
          {:ok, metadata} <- expect(msg, "metadata", :hash) do
-      {:ok, Transaction.Payment.new(inputs, outputs, metadata)}
+      input_utxos = Enum.map(inputs, &to_input_utxo/1)
+      output_utxos = Enum.map(outputs, &to_output_utxo/1)
+      {:ok, %ExPlasma.Transactions.Payment{inputs: input_utxos, outputs: output_utxos, metadata: metadata}}
     end
+  end
+
+  defp to_input_utxo({blknum, txindex, oindex}) do
+    %ExPlasma.Utxo{blknum: blknum, txindex: txindex, oindex: oindex}
+  end
+
+  defp to_output_utxo({owner, currency, amount}) do
+    %ExPlasma.Utxo{owner: owner, currency: currency, amount: amount}
   end
 
   @spec parse_domain(map()) :: {:ok, Tools.eip712_domain_t()} | Base.validation_error_t()

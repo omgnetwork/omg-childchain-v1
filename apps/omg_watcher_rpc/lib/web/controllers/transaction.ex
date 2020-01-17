@@ -63,7 +63,7 @@ defmodule OMG.WatcherRPC.Web.Controller.Transaction do
       # it's tempting to skip the unnecessary encoding-decoding part, but it gain broader
       # validation and communicates with API layer with known structures than bytes
       signed_tx
-      |> Transaction.Signed.encode()
+      |> ExPlasma.Transaction.encode()
       |> submit_tx_inf(conn)
     end
   end

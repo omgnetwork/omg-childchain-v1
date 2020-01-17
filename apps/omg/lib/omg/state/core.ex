@@ -403,19 +403,20 @@ defmodule OMG.State.Core do
   end
 
   defp utxos_from(%ExPlasma.Transactions.Deposit{} = transaction, blknum, tx_index) do
-    hashed_transaction_bytes = 
+    hashed_transaction_bytes =
       transaction
       |> ExPlasma.Transaction.encode()
       |> ExPlasma.Encoding.keccak_hash()
 
-    outputs = Enum.map(transaction.outputs, fn output ->
-      %OMG.Output{
-        output_type: output.output_type,
-        owner: output.owner,
-        currency: output.currency,
-        amount: output.amount
-      }
-    end)
+    outputs =
+      Enum.map(transaction.outputs, fn output ->
+        %OMG.Output{
+          output_type: output.output_type,
+          owner: output.owner,
+          currency: output.currency,
+          amount: output.amount
+        }
+      end)
 
     do_utxos_from({outputs, hashed_transaction_bytes}, blknum, tx_index)
   end

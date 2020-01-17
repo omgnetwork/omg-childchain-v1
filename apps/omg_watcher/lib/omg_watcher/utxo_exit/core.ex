@@ -61,7 +61,7 @@ defmodule OMG.Watcher.UtxoExit.Core do
     # about malformed_witnesses.
     #
     # See: https://github.com/omisego/elixir-omg/issues/1263
-    unsigned_txbytes = ExRLP.encode([ [] | tx_rlp])
+    unsigned_txbytes = ExRLP.encode([[] | tx_rlp])
     proof = unsigned_txbytes |> List.wrap() |> Block.inclusion_proof(0)
 
     {:ok,
