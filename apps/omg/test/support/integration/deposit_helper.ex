@@ -26,26 +26,23 @@ defmodule Support.Integration.DepositHelper do
   @eth OMG.Eth.RootChain.eth_pseudo_address()
 
   def deposit_to_child_chain(to, value, token \\ @eth)
-
-  def deposit_to_child_chain(to, value, @eth) do
-    {:ok, receipt} =
-      Transaction.Payment.new([], [{to, @eth, value}])
-      |> Transaction.raw_txbytes()
-      |> RootChainHelper.deposit(value, to)
-      |> DevHelper.transact_sync!()
-
-    process_deposit(receipt)
-  end
+  def deposit_to_child_chain(to, value, @eth), do: do_deposit_to_child_chain(to, value, @eth)
 
   def deposit_to_child_chain(to, value, token_addr) when is_binary(token_addr) and byte_size(token_addr) == 20 do
     contract_addr = Config.maybe_fetch_addr!(nil, :erc20_vault)
-
     {:ok, _} = Eth.Token.approve(to, contract_addr, value, token_addr) |> DevHelper.transact_sync!()
 
+    do_deposit_to_child_chain(to, value, token_addr)
+  end
+
+  defp do_deposit_to_child_chain(to, value, token_address) do
+    utxo = %{owner: to, currency: @eth, amount: value}
+    {:ok, deposit} = ExPlasma.Transaction.Deposit.new(utxo)
+
     {:ok, receipt} =
-      Transaction.Payment.new([], [{to, token_addr, value}])
-      |> Transaction.raw_txbytes()
-      |> RootChainHelper.deposit_from(to)
+      deposit
+      |> ExPlasma.encode()
+      |> RootChainHelper.deposit(value, to)
       |> DevHelper.transact_sync!()
 
     process_deposit(receipt)
