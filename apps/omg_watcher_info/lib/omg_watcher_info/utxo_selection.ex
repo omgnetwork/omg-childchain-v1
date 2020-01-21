@@ -205,14 +205,16 @@ defmodule OMG.WatcherInfo.UtxoSelection do
   end
 
   defp create_raw_transaction(inputs, outputs, metadata) do
-    if Enum.any?(outputs, &(&1.owner == nil)),
-      do: nil,
-      else:
-        ExPlasma.Transactions.Payment.new(%{
+    if Enum.any?(outputs, &(&1.owner == nil)) do
+      nil
+    else
+      {:ok, payment} = ExPlasma.Transaction.Payment.new(%{
           inputs: inputs |> Enum.map(&%ExPlasma.Utxo{blknum: &1.blknum, txindex: &1.txindex, oindex: &1.oindex}),
           outputs: outputs |> Enum.map(&%ExPlasma.Utxo{owner: &1.owner, currency: &1.currency, amount: &1.amount}),
           metadata: metadata || @empty_metadata
         })
+      payment
+    end
   end
 
   defp create_txbytes(tx) do

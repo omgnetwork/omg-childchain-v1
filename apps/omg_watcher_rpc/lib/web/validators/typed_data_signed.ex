@@ -46,7 +46,7 @@ defmodule OMG.WatcherRPC.Web.Validator.TypedDataSigned do
          {:ok, metadata} <- expect(msg, "metadata", :hash) do
       input_utxos = Enum.map(inputs, &to_input_utxo/1)
       output_utxos = Enum.map(outputs, &to_output_utxo/1)
-      {:ok, %ExPlasma.Transactions.Payment{inputs: input_utxos, outputs: output_utxos, metadata: metadata}}
+      {:ok, %ExPlasma.Transaction.Payment{inputs: input_utxos, outputs: output_utxos, metadata: metadata}}
     end
   end
 

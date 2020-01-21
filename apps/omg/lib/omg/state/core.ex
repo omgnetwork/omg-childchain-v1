@@ -395,14 +395,16 @@ defmodule OMG.State.Core do
   end
 
   defp deposit_to_utxo(%{blknum: blknum, currency: cur, owner: owner, amount: amount}) do
-    %ExPlasma.Utxo{currency: cur, owner: owner, amount: amount}
-    |> ExPlasma.Transactions.Deposit.new()
+    utxo = %ExPlasma.Utxo{currency: cur, owner: owner, amount: amount}
+    {:ok, deposit} = ExPlasma.Transaction.Deposit.new(utxo)
+
+    deposit
     |> utxos_from(blknum, 0)
     |> Enum.map(& &1)
     |> hd()
   end
 
-  defp utxos_from(%ExPlasma.Transactions.Deposit{} = transaction, blknum, tx_index) do
+  defp utxos_from(%ExPlasma.Transaction.Deposit{} = transaction, blknum, tx_index) do
     hashed_transaction_bytes =
       transaction
       |> ExPlasma.Transaction.encode()

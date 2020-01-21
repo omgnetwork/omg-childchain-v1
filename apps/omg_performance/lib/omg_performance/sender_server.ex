@@ -139,7 +139,7 @@ defmodule OMG.Performance.SenderServer do
     # create and return signed transaction
     inputs = [{last_tx.blknum, last_tx.txindex, last_tx.oindex}]
     outputs = change_output ++ recipient_output
-    payment = ExPlasma.Transactions.Payment.new(%{inputs: inputs, outputs: outputs})
+    {:ok, payment} = ExPlasma.Transaction.Payment.new(%{inputs: inputs, outputs: outputs})
     ExPlasma.Transaction.sign(payment, keys: [spender.priv])
   end
 
@@ -148,7 +148,7 @@ defmodule OMG.Performance.SenderServer do
           {:ok, blknum :: pos_integer, txindex :: pos_integer, newamount :: pos_integer}
           | {:error, any()}
           | :retry
-  defp submit_tx(%ExPlasma.Transactions.Payment{} = tx, %__MODULE__{seqnum: seqnum, child_chain_url: child_chain_url}),
+  defp submit_tx(%ExPlasma.Transaction.Payment{} = tx, %__MODULE__{seqnum: seqnum, child_chain_url: child_chain_url}),
     do: do_submit_tx(ExPlasma.Transaction.encode(tx), seqnum, child_chain_url)
 
   defp submit_tx(tx, %__MODULE__{seqnum: seqnum, child_chain_url: child_chain_url}),

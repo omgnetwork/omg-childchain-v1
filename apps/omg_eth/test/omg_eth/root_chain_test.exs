@@ -68,13 +68,12 @@ defmodule OMG.Eth.RootChainTest do
     use_cassette "ganache/get_deposits", match_requests_on: [:request_body] do
       # not using OMG.ChildChain.Transaction to not depend on that in omg_eth tests
       # payment tx_type, no inputs, one output, metadata
-      tx =
-        [owner: contracts.authority_address, currency: @eth, amount: 1]
-        |> ExPlasma.Transactions.Deposit.new()
-        |> ExPlasma.Transaction.encode()
+      utxo = [owner: contracts.authority_address, currency: @eth, amount: 1]
+      {:ok, deposit} = ExPlasma.Transaction.Deposit.new(utxo)
+      rlp = ExPlasma.Transaction.encode(deposit)
 
       {:ok, tx_hash} =
-        RootChainHelper.deposit(tx, 1, contracts.authority_address, contracts)
+        RootChainHelper.deposit(rlp, 1, contracts.authority_address, contracts)
         |> DevHelper.transact_sync!()
 
       {:ok, height} = Eth.get_ethereum_height()
@@ -126,10 +125,9 @@ defmodule OMG.Eth.RootChainTest do
   end
 
   defp deposit_then_start_exit(owner, amount, currency, contracts) do
-    rlp =
-      [owner: owner, currency: currency, amount: amount]
-      |> ExPlasma.Transactions.Deposit.new()
-      |> ExPlasma.Transaction.encode()
+    utxo = %ExPlasma.Utxo{owner: owner, currency: currency, amount: amount}
+    {:ok, deposit} = ExPlasma.Transaction.Deposit.new(utxo)
+    rlp = ExPlasma.Transaction.encode(deposit)
 
     {:ok, deposit_tx} =
       rlp

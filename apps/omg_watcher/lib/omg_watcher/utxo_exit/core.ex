@@ -51,7 +51,7 @@ defmodule OMG.Watcher.UtxoExit.Core do
     %Utxo{output: %OMG.Output{amount: amount, currency: currency, owner: owner}} = Utxo.from_db_value(db_utxo_value)
 
     utxo = %ExPlasma.Utxo{owner: owner, currency: currency, amount: amount}
-    tx = ExPlasma.Transactions.Deposit.new(%{sigs: [], inputs: [], outputs: [utxo]})
+    {:ok, tx} = ExPlasma.Transaction.Deposit.new(%{sigs: [], inputs: [], outputs: [utxo]})
     tx_rlp = ExPlasma.Transaction.to_rlp(tx)
     raw_txbytes = ExPlasma.Transaction.encode(tx)
 
