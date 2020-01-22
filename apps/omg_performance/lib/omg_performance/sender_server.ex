@@ -142,11 +142,6 @@ defmodule OMG.Performance.SenderServer do
     ExPlasma.Transaction.sign(payment, keys: [spender.priv])
   end
 
-  # Submits new transaction to the blockchain server.
-  @spec submit_tx(Transaction.Signed.t() | ExPlasma.Transaction.t(), __MODULE__.state()) ::
-          {:ok, blknum :: pos_integer, txindex :: pos_integer, newamount :: pos_integer}
-          | {:error, any()}
-          | :retry
   defp submit_tx(%ExPlasma.Transaction.Payment{} = tx, %__MODULE__{seqnum: seqnum, child_chain_url: child_chain_url}),
     do: do_submit_tx(ExPlasma.Transaction.encode(tx), seqnum, child_chain_url)
 
