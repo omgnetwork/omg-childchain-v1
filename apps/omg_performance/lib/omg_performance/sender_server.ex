@@ -23,7 +23,6 @@ defmodule OMG.Performance.SenderServer do
   use GenServer
   use OMG.Utils.LoggerExt
 
-  alias OMG.DevCrypto
   alias OMG.State.Transaction
   alias OMG.TestHelper
   alias OMG.Utxo

@@ -36,7 +36,7 @@ defmodule Support.Integration.DepositHelper do
   end
 
   defp do_deposit_to_child_chain(to, value, token_address) do
-    utxo = %{owner: to, currency: @eth, amount: value}
+    utxo = %{owner: to, currency: token_address, amount: value}
     {:ok, deposit} = ExPlasma.Transaction.Deposit.new(utxo)
 
     {:ok, receipt} =

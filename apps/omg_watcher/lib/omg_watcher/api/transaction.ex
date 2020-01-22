@@ -17,9 +17,7 @@ defmodule OMG.Watcher.API.Transaction do
   Module provides API for transactions
   """
 
-  alias OMG.State.Transaction
   alias OMG.Utxo
-
   alias OMG.Watcher.HttpRPC.Client
 
   require Utxo
