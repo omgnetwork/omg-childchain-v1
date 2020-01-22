@@ -19,7 +19,6 @@ defmodule Support.Integration.DepositHelper do
 
   alias OMG.Eth
   alias OMG.Eth.Config
-  alias OMG.State.Transaction
   alias Support.DevHelper
   alias Support.RootChainHelper
 

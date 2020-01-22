@@ -208,11 +208,13 @@ defmodule OMG.WatcherInfo.UtxoSelection do
     if Enum.any?(outputs, &(&1.owner == nil)) do
       nil
     else
-      {:ok, payment} = ExPlasma.Transaction.Payment.new(%{
+      {:ok, payment} =
+        ExPlasma.Transaction.Payment.new(%{
           inputs: inputs |> Enum.map(&%ExPlasma.Utxo{blknum: &1.blknum, txindex: &1.txindex, oindex: &1.oindex}),
           outputs: outputs |> Enum.map(&%ExPlasma.Utxo{owner: &1.owner, currency: &1.currency, amount: &1.amount}),
           metadata: metadata || @empty_metadata
         })
+
       payment
     end
   end
