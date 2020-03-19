@@ -18,24 +18,105 @@ defmodule OMG.ChildChain.EthereumEventAggregatorTest do
   alias OMG.Eth.RootChain.Abi
 
   setup do
-    table = :ets.new(String.to_atom("test-#{:rand.uniform(1000)}"), [:bag, :public, :named_table])
-    event_fetcher_name = String.to_atom("test-#{:rand.uniform(1000)}")
+    # table = :ets.new(String.to_atom("test-#{:rand.uniform(1000)}"), [:bag, :public, :named_table])
+    # event_fetcher_name = String.to_atom("test-#{:rand.uniform(1000)}")
 
-    start_supervised(
-      {EthereumEventAggregator,
-       name: event_fetcher_name,
-       contracts: %{},
-       ets_bucket: table,
-       events: [
-         [name: :deposit_created, enrich: false],
-         [name: :exit_started, enrich: true],
-         [name: :in_flight_exit_input_piggybacked, enrich: false],
-         [name: :in_flight_exit_output_piggybacked, enrich: false],
-         [name: :in_flight_exit_started, enrich: true]
-       ]}
-    )
+    # start_supervised(
+    #   {EthereumEventAggregator,
+    #    name: event_fetcher_name,
+    #    contracts: %{},
+    #    ets_bucket: table,
+    #    events: [
+    #      [name: :deposit_created, enrich: false],
+    #      [name: :exit_started, enrich: true],
+    #      [name: :in_flight_exit_input_piggybacked, enrich: false],
+    #      [name: :in_flight_exit_output_piggybacked, enrich: false],
+    #      [name: :in_flight_exit_started, enrich: true]
+    #    ]}
+    # )
 
-    {:ok, %{event_fetcher_name: event_fetcher_name, table: table}}
+    # {:ok, %{event_fetcher_name: event_fetcher_name, table: table}}
+    :ok
+  end
+
+  @tag timeout: 60000 * 5
+  test "replicate audit issue", %{test: test_name} do
+    Enum.map(1..2000, fn margin ->
+      table = :ets.new(String.to_atom("test-#{:rand.uniform(9_000_000)}"), [:bag, :public, :named_table])
+      event_fetcher_name = String.to_atom("test-#{:rand.uniform(9_000_000)}")
+
+      {:ok, pid} =
+        start_supervised(
+          {EthereumEventAggregator,
+           name: event_fetcher_name,
+           contracts: %{},
+           ets_bucket: table,
+           events: [
+             [name: :deposit_created, enrich: false],
+             [name: :exit_started, enrich: true],
+             [name: :in_flight_exit_input_piggybacked, enrich: false],
+             [name: :in_flight_exit_output_piggybacked, enrich: false],
+             [name: :in_flight_exit_started, enrich: true]
+           ]}
+        )
+
+      defmodule test_name do
+        alias OMG.ChildChain.EthereumEventAggregatorTest
+
+        def get_ethereum_events(from_block, to_block, _signatures, _contracts)
+            when from_block >= 7_528_688 or to_block < 7_528_692 do
+          deposit_1 = 7_528_688
+          deposit_2 = 7_528_692
+
+          {:ok,
+           [
+             EthereumEventAggregatorTest.deposit_created_log(deposit_1),
+             EthereumEventAggregatorTest.deposit_created_log(deposit_2)
+           ]}
+        end
+
+        def get_ethereum_events(_from_block, _to_block, _signatures, _contracts) do
+          {:ok, []}
+        end
+      end
+
+      from_block = 7_528_606 - margin
+      to_block = 7_528_606
+      :sys.replace_state(event_fetcher_name, fn state -> Map.put(state, :rpc, test_name) end)
+      {:ok, []} = EthereumEventAggregator.deposit_created(event_fetcher_name, from_block, to_block)
+      from_block = from_block + margin
+      to_block = to_block + margin
+
+      deposit_1 = 7_528_688
+      deposit_2 = 7_528_692
+      
+      {:ok, []} = EthereumEventAggregator.in_flight_exit_started(event_fetcher_name, from_block, to_block)
+      {:ok, []} = EthereumEventAggregator.in_flight_exit_piggybacked(event_fetcher_name, from_block, to_block)
+      {:ok, []} = EthereumEventAggregator.exit_started(event_fetcher_name, from_block, to_block)
+
+      case deposit_1 >= from_block and deposit_1 <= to_block and deposit_2 >= from_block and deposit_2 <= to_block do
+        true ->
+          deposit_created = deposit_1 |> deposit_created_log() |> Abi.decode_log()
+          deposit_created_2 = deposit_2 |> deposit_created_log() |> Abi.decode_log()
+
+          expected_events = [deposit_created, deposit_created_2]
+
+          assert EthereumEventAggregator.deposit_created(event_fetcher_name, from_block, to_block) ==
+                   {:ok, expected_events}
+
+        _ when deposit_1 >= from_block and deposit_1 <= to_block ->
+          deposit_created = deposit_1 |> deposit_created_log() |> Abi.decode_log()
+          expected_events = [deposit_created]
+
+          assert EthereumEventAggregator.deposit_created(event_fetcher_name, from_block, to_block) ==
+                   {:ok, expected_events}
+
+        _ ->
+          assert EthereumEventAggregator.deposit_created(event_fetcher_name, from_block, to_block) == {:ok, []}
+      end
+
+      :ok = stop_supervised(EthereumEventAggregator)
+    end)
   end
 
   @tag common: true
