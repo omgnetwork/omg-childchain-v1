@@ -42,8 +42,8 @@ defmodule OMG.ChildChain.EthereumEventAggregatorTest do
   @tag timeout: 60000 * 5
   test "replicate audit issue", %{test: test_name} do
     Enum.map(1..2000, fn margin ->
-      table = :ets.new(String.to_atom("test-#{:rand.uniform(9_000_000)}"), [:bag, :public, :named_table])
-      event_fetcher_name = String.to_atom("test-#{:rand.uniform(9_000_000)}")
+      table = :ets.new(String.to_atom("test-#{:rand.uniform(90000)}"), [:bag, :public, :named_table])
+      event_fetcher_name = String.to_atom("test-#{:rand.uniform(90000)}")
 
       {:ok, pid} =
         start_supervised(
@@ -89,7 +89,7 @@ defmodule OMG.ChildChain.EthereumEventAggregatorTest do
 
       deposit_1 = 7_528_688
       deposit_2 = 7_528_692
-      
+
       {:ok, []} = EthereumEventAggregator.in_flight_exit_started(event_fetcher_name, from_block, to_block)
       {:ok, []} = EthereumEventAggregator.in_flight_exit_piggybacked(event_fetcher_name, from_block, to_block)
       {:ok, []} = EthereumEventAggregator.exit_started(event_fetcher_name, from_block, to_block)
@@ -115,6 +115,7 @@ defmodule OMG.ChildChain.EthereumEventAggregatorTest do
           assert EthereumEventAggregator.deposit_created(event_fetcher_name, from_block, to_block) == {:ok, []}
       end
 
+      :ets.delete(table)
       :ok = stop_supervised(EthereumEventAggregator)
     end)
   end
