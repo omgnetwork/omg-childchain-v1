@@ -22,11 +22,8 @@ defmodule OMG.DB do
   alias OMG.DB.RocksDB
   @type utxo_pos_db_t :: {pos_integer, non_neg_integer, non_neg_integer}
 
-  @callback start_link(term) :: GenServer.on_start()
-  @callback child_spec() :: Supervisor.child_spec()
   @callback child_spec(term) :: Supervisor.child_spec()
   @callback init(String.t()) :: :ok
-  @callback init() :: :ok
   @callback initiation_multiupdate() :: :ok | {:error, any}
 
   @callback multi_update(term()) :: :ok | {:error, any}
@@ -65,17 +62,35 @@ defmodule OMG.DB do
                       child_top_block_number: 1,
                       get_single_value: 2
 
-  def start_link(args), do: RocksDB.start_link(args)
+  @default_instance_name OMG.DB.Instance.Default
 
-  def child_spec(), do: RocksDB.child_spec()
-  def child_spec(args), do: RocksDB.child_spec(args)
-
-  def init(path) do
-    RocksDB.init(path)
+  def child_spec(args \\ []) do
+    args
+    |> Keyword.put_new_lazy(:db_path, fn -> Application.fetch_env!(:omg_db, :path) end)
+    |> prepare_args()
+    |> RocksDB.child_spec()
   end
 
-  def init() do
-    RocksDB.init()
+  @doc """
+  Initalizes directory for default instance database storage.
+  """
+  def init(path) do
+    init(path, [@default_instance_name])
+  end
+
+  @doc """
+  Initializes directories for multiple database instances. The list of `instances` has to contain
+  atoms in the form `OMG.DB.Instance.<InstanceName>`. Instance storage will be created under snake cased
+  `<InstanceName>` subdirectory of `path`.
+  """
+  def init(path, instances) do
+    :ok = Application.put_env(:omg_db, :path, path, persistent: true)
+
+    instances
+    |> Enum.map(fn instance ->
+      RocksDB.init(instance, join_path(path, instance))
+    end)
+    |> all_ok_or_error()
   end
 
   @doc """
@@ -151,4 +166,29 @@ defmodule OMG.DB do
       :omg_eth_contracts
     ]
   end
+
+  @doc """
+  Combines path for database instance storage location.
+  `instance` has to be atom in form `OMG.DB.Instance.<InstanceName>`.
+  """
+  def join_path(base_path, instance) when is_binary(base_path) and is_atom(instance) do
+    ["Elixir", "OMG", "DB", "Instance", instance_name] =
+      instance
+      |> Atom.to_string()
+      |> String.split(".")
+
+    Path.join(base_path, Macro.underscore(instance_name))
+  end
+
+  # Sets the key-values expected by database implementation, providing default values
+  defp prepare_args(args) do
+    base_path = Keyword.fetch!(args, :db_path)
+    instance = Keyword.get(args, :instance, @default_instance_name)
+
+    [db_path: join_path(base_path, instance), name: instance]
+  end
+
+  defp all_ok_or_error([]), do: :ok
+  defp all_ok_or_error([:ok | rest]), do: all_ok_or_error(rest)
+  defp all_ok_or_error([error | _]), do: error
 end

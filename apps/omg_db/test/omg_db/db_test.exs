@@ -102,6 +102,20 @@ defmodule OMG.DBTest do
     [] = competitors_info -- db_writes
   end
 
+  describe "Multi-instance storage path" do
+    test "create paths for correctly prefixed instances" do
+      base_path = "/tmp"
+
+      assert "#{base_path}/exit_processor" == DB.join_path(base_path, OMG.DB.Instance.ExitProcessor)
+      assert "#{base_path}/default" == DB.join_path(base_path, OMG.DB.Instance.Default)
+      assert "#{base_path}/omg_network" == DB.join_path(base_path, OMG.DB.Instance.OMGNetwork)
+    end
+
+    test "fails when instance incorrectly prefixed" do
+      assert_raise MatchError, fn -> DB.join_path("/path", OMG.DB.RocksDB) end
+    end
+  end
+
   defp create_write(:utxo = type, pid) do
     db_writes =
       Enum.map(1..@writes, fn index ->
