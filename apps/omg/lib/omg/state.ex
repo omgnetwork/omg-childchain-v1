@@ -214,7 +214,7 @@ defmodule OMG.State do
     db_utxos = fetch_utxos_from_db(exiting_utxos, state)
     state = Core.with_utxos(state, db_utxos)
 
-    Logger.warn("exit_utxos exiting_utxo_triggers: #{inspect(exiting_utxo_triggers)}")
+    Logger.warn("exit_utxos exiting_utxos: #{inspect(exiting_utxos)}")
     Logger.warn("exit_utxos db_utxos: #{inspect(db_utxos)}")
     Logger.warn("exit_utxos state before Core.exit_utxos: #{inspect(state)}")
 
@@ -302,7 +302,16 @@ defmodule OMG.State do
 
   defp utxo_from_db(input_pointer) do
     # `DB` query can return `:not_found` which is filtered out by following `is_input_pointer?`
-    with {:ok, utxo_kv} <- DB.utxo(Utxo.Position.to_input_db_key(input_pointer)),
-         do: utxo_kv
+    with {:ok, utxo_kv} <- DB.utxo(Utxo.Position.to_input_db_key(input_pointer)) do
+      Logger.warn(">>>>> utxo_from_db get utxo: #{inspect(utxo_kv)} >>>>>>>>>>>")
+      utxo_kv
+    else
+      result ->
+        Logger.warn(
+          ">>>>> utxo_from_db failed result: #{inspect(result)} with input_pointer: #{inspect(input_pointer)} >>>>>>>>>>>"
+        )
+
+        result
+    end
   end
 end
