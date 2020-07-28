@@ -19,9 +19,6 @@ defmodule OMG.Watcher.Integration.TestServer do
   For now it's strictly tied with child chain api and handles env variable changes
   """
 
-  alias FakeServer.Agents.EnvAgent
-  alias FakeServer.HTTP.Server
-
   @doc """
   Configures route for fake server to respond for given path with given response
   **Please note: **
@@ -34,14 +31,12 @@ defmodule OMG.Watcher.Integration.TestServer do
   """
   def with_route(%{fake_addr: fake_addr, server_id: server_id} = _context, path, response_block) do
     Application.put_env(:omg_watcher, :child_chain_url, fake_addr)
-    env = EnvAgent.get_env(server_id)
-    _ = EnvAgent.save_env(server_id, %FakeServer.Env{env | routes: [path | env.routes]})
-    Server.add_response(server_id, path, response_block)
+    FakeServer.put_route(server_id, path, response_block)
   end
 
   def make_response(data) when is_map(data),
     do:
-      FakeServer.HTTP.Response.ok(%{
+      FakeServer.Response.ok(%{
         version: "1.0",
         success: not Map.has_key?(data, :code),
         data: data
