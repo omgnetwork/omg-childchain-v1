@@ -23,7 +23,6 @@ defmodule OMG.Watcher.EthereumEventAggregator do
   alias OMG.Eth.RootChain.Abi
   alias OMG.Eth.RootChain.Event
   alias OMG.Eth.RootChain.Rpc
-  alias OMG.Eth.Tenderly.CallData
 
   @timeout 55_000
   @type result() :: {:ok, list(map())} | {:error, :check_range}
