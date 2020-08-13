@@ -341,7 +341,7 @@ defmodule OMG.Watcher.ExitProcessor do
 
     contract_ife_ids =
       Enum.map(exits, fn %{call_data: %{in_flight_tx: txbytes}} ->
-        ExPlasma.InFlightExit.txbytes_to_id(txbytes)
+        ExPlasma.InFlightExit.tx_bytes_to_id(txbytes)
       end)
 
     # Prepare events data for internal bus
