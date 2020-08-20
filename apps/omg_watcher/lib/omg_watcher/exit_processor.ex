@@ -80,6 +80,18 @@ defmodule OMG.Watcher.ExitProcessor do
   end
 
   @doc """
+  Accepts events and processes them in the state - new in flight exits are tracked.
+
+  Returns `db_updates` to be sent to `OMG.DB` by the caller
+  """
+  # empty list clause to not block the server for no-ops
+  def delete_in_flight_exits([]), do: {:ok, []}
+
+  def delete_in_flight_exits(in_flight_exit_deleted_events) do
+    GenServer.call(__MODULE__, {:in_flight_exits_deleted, in_flight_exit_deleted_events}, @timeout)
+  end
+
+  @doc """
   Accepts events and processes them in the state - finalized exits are untracked _if valid_ otherwise raises alert
 
   Returns `db_updates` to be sent to `OMG.DB` by the caller
@@ -357,6 +369,29 @@ defmodule OMG.Watcher.ExitProcessor do
     ife_contract_statuses = Enum.zip(statuses, contract_ife_ids)
     {new_state, db_updates} = Core.new_in_flight_exits(state, exits, ife_contract_statuses)
     {:reply, {:ok, db_updates}, new_state}
+  end
+
+
+  @doc """
+  See `delete_in_flight_exits/1`. Flow:
+
+  - takes a list of standard exit finalization events from the contract
+  - discovers the `OMG.State`'s native key for the finalizing exits (`utxo_pos`) (`Core.exit_key_by_exit_id/2`)
+  - marks as spent these UTXOs in `OMG.State` expecting it to tell which of those were valid finalizations (UTXOs exist)
+  - reflects this result in the `ExitProcessor`'s state
+  - returns `db_updates`, concatenated with those related to the call to `OMG.State`
+  """
+  def handle_call({:delete_in_flight_exits, deletions}, _from, state) do
+    _ = if not Enum.empty?(deletions), do: Logger.info("Recognized #{Enum.count(deletions)} deletions: #{inspect(deletions)}")
+
+    {:ok, db_updates_from_state, validities} =
+      deletions |> Enum.map(&Core.exit_key_by_exit_id(state, &1.exit_id)) |> State.exit_utxos()
+
+    {:ok, statuses} = Eth.RootChain.get_in_flight_exit_structs(contract_ife_ids)
+
+    {new_state, db_updates} = Core.finalize_exits(state, validities)
+
+    {:reply, {:ok, db_updates ++ db_updates_from_state}, new_state}
   end
 
   @doc """
