@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # unfortunately something is wrong with the fixtures loading in `test_helper.exs` and the following needs to be done
-#Code.require_file("#{__DIR__}/../../omg_child_chain/test/omg_child_chain/integration/fixtures.exs")
+# Code.require_file("#{__DIR__}/../../omg_child_chain/test/omg_child_chain/integration/fixtures.exs")
 
 defmodule OMG.Performance.Fixtures do
   # use ExUnitFixtures.FixtureModule

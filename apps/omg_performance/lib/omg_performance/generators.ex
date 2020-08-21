@@ -50,26 +50,27 @@ defmodule OMG.Performance.Generators do
     - :use_blocks - if not nil, will use this as the stream of blocks, otherwise streams from child chain rpc
     - :take - if not nil, will limit to this many results
   """
-  @spec stream_utxo_positions(keyword()) :: [non_neg_integer()]
-  def stream_utxo_positions(opts \\ []) do
-    utxo_positions =
-      opts[:use_blocks]
-      |> if(do: opts[:use_blocks], else: stream_blocks())
-      |> Stream.flat_map(&to_utxo_position_list(&1, opts))
 
-    if opts[:take], do: Enum.take(utxo_positions, opts[:take]), else: utxo_positions
-  end
+  # @spec stream_utxo_positions(keyword()) :: [non_neg_integer()]
+  # def stream_utxo_positions(opts \\ []) do
+  #   utxo_positions =
+  #     opts[:use_blocks]
+  #     |> if(do: opts[:use_blocks], else: stream_blocks())
+  #     |> Stream.flat_map(&to_utxo_position_list(&1, opts))
 
-  @spec stream_blocks() :: [OMG.Block.t()]
-  defp stream_blocks() do
-    child_chain_url = OMG.Watcher.Configuration.child_chain_url()
-    interval = Configuration.child_block_interval()
+  #   if opts[:take], do: Enum.take(utxo_positions, opts[:take]), else: utxo_positions
+  # end
 
-    Stream.map(
-      Stream.iterate(1, &(&1 + 1)),
-      &get_block!(&1 * interval, child_chain_url)
-    )
-  end
+  # @spec stream_blocks() :: [OMG.Block.t()]
+  # defp stream_blocks() do
+  #   child_chain_url = OMG.Watcher.Configuration.child_chain_url()
+  #   interval = Configuration.child_block_interval()
+
+  #   Stream.map(
+  #     Stream.iterate(1, &(&1 + 1)),
+  #     &get_block!(&1 * interval, child_chain_url)
+  #   )
+  # end
 
   defp generate_user(opts) do
     user = OMG.TestHelper.generate_entity()
