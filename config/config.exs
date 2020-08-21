@@ -151,7 +151,6 @@ config :os_mon,
   system_memory_high_watermark: 1.00,
   process_memory_high_watermark: 1.00
 
-
 config :phoenix,
   json_library: Jason,
   serve_endpoints: true,

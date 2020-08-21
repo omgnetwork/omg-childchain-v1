@@ -228,10 +228,7 @@ jobs:
       - run: mix sobelow --exit --skip --ignore Config.HTTPS -r apps/omg_eth
       - run: mix sobelow --exit --skip --ignore Config.HTTPS -r apps/omg_status
       - run: mix sobelow --exit --skip --ignore Config.HTTPS -r apps/omg_utils
-      - run: mix sobelow --exit --skip --ignore Config.HTTPS -r apps/omg_watcher
-      - run: mix sobelow --exit --skip --ignore Config.HTTPS -r apps/omg_watcher_info
-      - run: mix sobelow --exit --skip --ignore Config.HTTPS -r apps/omg_watcher_rpc --router apps/omg_watcher_rpc/lib/web/router.ex
-
+    
   child_chain_coveralls_and_integration_tests:
     executor: builder_pg_geth
     environment:
@@ -253,56 +250,6 @@ jobs:
               mix coveralls.html --parallel --umbrella --include child_chain --exclude watcher --exclude watcher_info --exclude common --exclude test --trace
             else
               mix coveralls.circle --parallel --umbrella --include child_chain --exclude watcher --exclude watcher_info --exclude common --exclude test --trace ||
-                # if mix failed, then coveralls_report won't run, so signal done here and return original exit status
-                (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && exit $retval)
-            fi
-
-  watcher_coveralls_and_integration_tests:
-    executor: builder_pg_geth
-    environment:
-      MIX_ENV: test
-    steps:
-      - setup_elixir-omg_workspace
-      - restore_cache:
-          keys:
-            - v2-mix-cache-test-compile-{{ checksum "mix.lock" }}-{{ .Branch }}-{{ .Revision }}
-      - run:
-          name: Compile
-          command: mix compile
-      - run:
-          name: Integration Tests & Coveralls Part Watcher
-          command: |
-            # Don't submit coverage report for forks, but let the build succeed
-            export SHELL=/bin/bash
-            if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
-              mix coveralls.html --parallel --umbrella --include watcher --exclude watcher_info --exclude child_chain --exclude common --exclude test --trace
-            else
-              mix coveralls.circle --parallel --umbrella --include watcher --exclude watcher_info --exclude child_chain --exclude common --exclude test --trace ||
-                # if mix failed, then coveralls_report won't run, so signal done here and return original exit status
-                (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && exit $retval)
-            fi
-
-  watcher_info_coveralls_and_integration_tests:
-    executor: builder_pg_geth
-    environment:
-      MIX_ENV: test
-    steps:
-      - setup_elixir-omg_workspace
-      - restore_cache:
-          keys:
-            - v2-mix-cache-test-compile-{{ checksum "mix.lock" }}-{{ .Branch }}-{{ .Revision }}
-      - run:
-          name: Compile
-          command: mix compile
-      - run:
-          name: Integration Tests & Coveralls Part Watcher
-          command: |
-            # Don't submit coverage report for forks, but let the build succeed
-            export SHELL=/bin/bash
-            if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
-              mix coveralls.html --parallel --umbrella --include watcher_info --exclude watcher --exclude child_chain --exclude common --exclude test --trace
-            else
-              mix coveralls.circle --parallel --umbrella --include watcher_info --exclude watche --exclude child_chain --exclude common --exclude test --trace ||
                 # if mix failed, then coveralls_report won't run, so signal done here and return original exit status
                 (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && exit $retval)
             fi
@@ -447,8 +394,6 @@ jobs:
           command: |
             [ -d data ] || mkdir data && chmod 777 data
       - run: make docker-child_chain
-      - run: make docker-watcher
-      - run: make docker-watcher_info
       - run:
           name: Start daemon services
           command: |
@@ -547,8 +492,6 @@ jobs:
             [ -d data2 ] || mkdir data2 && chmod 777 data2
             [ -d data ] || mkdir data && chmod 777 data
       - run: make docker-child_chain
-      - run: make docker-watcher
-      - run: make docker-watcher_info
       - run:
           name: Start daemon services
           command: |

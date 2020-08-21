@@ -16,7 +16,6 @@ defmodule OMG.Utils.HttpRPC.ResponseTest do
   use ExUnit.Case, async: true
 
   alias OMG.Utils.HttpRPC.Response
-  alias OMG.WatcherInfo.DB
 
   @cleaned_tx %{
     blknum: nil,
@@ -41,20 +40,6 @@ defmodule OMG.Utils.HttpRPC.ResponseTest do
       expected_value = [nil, 1, "0x3031323334", :atom, [], %{}, "an arbitrary string"]
       assert expected_value == Response.sanitize(value)
     end
-
-    test "cleaning response structure: list of maps when ecto unloaded" do
-      unload_ecto()
-      refute [@cleaned_tx, @cleaned_tx] == Response.sanitize([%DB.Transaction{}, %DB.Transaction{}])
-    end
-  end
-
-  test "cleaning response structure: map of maps" do
-    assert %{first: @cleaned_tx, second: @cleaned_tx} ==
-             Response.sanitize(%{second: %DB.Transaction{}, first: %DB.Transaction{}})
-  end
-
-  test "cleaning response structure: list of maps" do
-    assert [@cleaned_tx, @cleaned_tx] == Response.sanitize([%DB.Transaction{}, %DB.Transaction{}])
   end
 
   test "cleaning response: simple value list" do
