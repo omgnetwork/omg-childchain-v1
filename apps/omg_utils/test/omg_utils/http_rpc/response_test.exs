@@ -17,17 +17,6 @@ defmodule OMG.Utils.HttpRPC.ResponseTest do
 
   alias OMG.Utils.HttpRPC.Response
 
-  @cleaned_tx %{
-    blknum: nil,
-    txbytes: nil,
-    txhash: nil,
-    txindex: nil,
-    txtype: nil,
-    metadata: nil,
-    inserted_at: nil,
-    updated_at: nil
-  }
-
   test "cleaning response: simple value list" do
     value = [nil, 1, "01234", :atom, [], %{}, {:skip_hex_encode, "an arbitrary string"}]
     expected_value = [nil, 1, "0x3031323334", :atom, [], %{}, "an arbitrary string"]
