@@ -682,43 +682,11 @@ jobs:
       - checkout
       - run: sh .circleci/ci_increase_chart_version.sh
 
-  increase_chart_version_watcher:
-    docker:
-      - image: cimg/base:2020.01
-    environment:
-      CHART_NAME: watcher
-      HELM_CHART_REPO: helm-development
-    steps:
-      - checkout
-      - run: sh .circleci/ci_increase_chart_version.sh
-
-  increase_chart_version_watcher_info:
-    docker:
-      - image: cimg/base:2020.01
-    environment:
-      CHART_NAME: watcher-info
-      HELM_CHART_REPO: helm-development
-    steps:
-      - checkout
-      - run: sh .circleci/ci_increase_chart_version.sh
-
   deploy_child_chain:
     executor: deployer
     steps:
       - checkout
       - run: DEPLOY=child_chain sh .circleci/ci_deploy.sh
-
-  deploy_watcher:
-    executor: deployer
-    steps:
-      - checkout
-      - run: DEPLOY=watcher sh .circleci/ci_deploy.sh
-
-  deploy_watcher_info:
-    executor: deployer
-    steps:
-      - checkout
-      - run: DEPLOY=watcher_info sh .circleci/ci_deploy.sh
 
   coveralls_report:
     docker:
@@ -798,7 +766,7 @@ workflows:
           requires: [build]
           filters: *all_branches_and_tags
       - notify_services:
-          requires: [deploy_watcher, deploy_watcher_info, deploy_child_chain]
+          requires: [deploy_child_chain]
           filters:
             branches:
               only:
@@ -806,8 +774,6 @@ workflows:
       - coveralls_report:
           requires:
             - child_chain_coveralls_and_integration_tests
-            
-            - watcher_info_coveralls_and_integration_tests
             - common_coveralls_and_integration_tests
             - test
       - child_chain_coveralls_and_integration_tests:
