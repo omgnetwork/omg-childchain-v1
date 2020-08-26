@@ -21,7 +21,6 @@ defmodule OMG.ChildChain.Integration.Fixtures do
   alias OMG.ChildChainRPC.Web.TestHelper
   alias OMG.Eth
   alias OMG.Eth.Encoding
-  alias OMG.Status.Alert.Alarm
   alias OMG.TestHelper
   alias Support.DevHelper
   alias Support.Integration.DepositHelper
@@ -95,18 +94,5 @@ defmodule OMG.ChildChain.Integration.Fixtures do
     token_deposit_blknum = DepositHelper.deposit_to_child_chain(alice.addr, some_value, token_addr)
 
     {deposit_blknum, token_deposit_blknum}
-  end
-
-  defp wait_for_web(), do: wait_for_web(100)
-
-  defp wait_for_web(counter) do
-    case Keyword.has_key?(Alarm.all(), elem(Alarm.main_supervisor_halted(__MODULE__), 0)) do
-      true ->
-        Process.sleep(100)
-        wait_for_web(counter - 1)
-
-      false ->
-        :ok
-    end
   end
 end

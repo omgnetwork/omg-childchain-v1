@@ -17,22 +17,8 @@ defmodule OMG.Performance.ExtendedPerftestTest do
   Simple smoke testing of the performance test
   """
 
-  use ExUnitFixtures
   use ExUnit.Case, async: false
-  use OMG.ChildChain.Integration.Fixtures
-
   use OMG.Performance
-
-  @moduletag :integration
-  @moduletag :common
-
-  # NOTE: still bound to fixtures :(, because of the child chain setup, but this will go eventually, so leaving as is
-  deffixture perf_test(contract) do
-    _ = contract
-    :ok = Performance.init()
-    {:ok, destdir} = Briefly.create(directory: true, prefix: "temp_results")
-    {:ok, %{destdir: destdir}}
-  end
 
   @tag timeout: 120_000
   test "Smoke test - run start_extended_perf and see if it doesn't crash" do
