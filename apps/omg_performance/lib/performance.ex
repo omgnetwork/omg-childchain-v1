@@ -62,7 +62,7 @@ defmodule OMG.Performance do
     {:ok, _} = Application.ensure_all_started(:cowboy)
 
     ethereum_rpc_url =
-      System.get_env("ETHEREUM_RPC_URL") || Application.get_env(:ethereumex, :url, "http://localhost:8545")
+      System.get_env("ETHEREUM_RPC_URL") || Application.get_env(:ethereumex, :url, "http://127.0.0.1:8555")
 
     child_chain_url =
       System.get_env("CHILD_CHAIN_URL") || Application.get_env(:omg_watcher, :child_chain_url, "http://localhost:9656")

@@ -102,14 +102,9 @@ defmodule Support.DevHelper do
     WaitFor.ok(f, timeout)
   end
 
-  def create_account_from_secret(:ganache, secret, passphrase),
-    do: do_create_account_from_secret("personal_importRawKey", Eth.Encoding.to_hex(secret), passphrase)
-
-  def create_account_from_secret(:geth, secret, passphrase),
-    do: do_create_account_from_secret("personal_importRawKey", Base.encode16(secret), passphrase)
-
-  def create_account_from_secret(:parity, secret, passphrase) when byte_size(secret) == 64,
-    do: do_create_account_from_secret("parity_newAccountFromSecret", Eth.Encoding.to_hex(secret), passphrase)
+  def create_account_from_secret(:geth, secret, passphrase) do
+    do_create_account_from_secret("personal_importRawKey", Base.encode16(secret), passphrase)
+  end
 
   # private
 

@@ -78,7 +78,7 @@ config :omg_child_chain_rpc, environment: :test
 
 # bumping these timeouts into infinity - let's rely on test timeouts rather than these
 config :ethereumex,
-  url: "http://localhost:8545",
+  url: "http://localhost:8555",
   http_options: [recv_timeout: :infinity],
   id_reset: true
 

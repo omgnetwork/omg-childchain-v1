@@ -34,9 +34,11 @@ defmodule OMG.Performance.ExtendedPerftestTest do
     {:ok, %{destdir: destdir}}
   end
 
-  @tag fixtures: [:perf_test, :in_beam_child_chain]
   @tag timeout: 120_000
-  test "Smoke test - run start_extended_perf and see if it doesn't crash", %{perf_test: {:ok, %{destdir: destdir}}} do
+  test "Smoke test - run start_extended_perf and see if it doesn't crash" do
+    :ok = Performance.init()
+    {:ok, destdir} = Briefly.create(directory: true, prefix: "temp_results")
+    {:ok, %{destdir: destdir}}
     # 3000 txs sending 1 each, plus 1 for fees
     ntxs = 3000
     senders = Generators.generate_users(2)

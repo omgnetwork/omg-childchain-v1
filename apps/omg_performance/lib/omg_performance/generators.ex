@@ -41,5 +41,4 @@ defmodule OMG.Performance.Generators do
     {:ok, _user} = DevHelper.import_unlock_fund(user, opts)
     user
   end
-
 end
