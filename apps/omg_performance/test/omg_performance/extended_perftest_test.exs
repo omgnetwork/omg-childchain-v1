@@ -20,6 +20,7 @@ defmodule OMG.Performance.ExtendedPerftestTest do
   use ExUnit.Case, async: false
   use OMG.Performance
 
+  @moduletag :live_childchain
   @tag timeout: 120_000
   test "Smoke test - run start_extended_perf and see if it doesn't crash" do
     :ok = Performance.init()

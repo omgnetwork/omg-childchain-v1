@@ -24,8 +24,8 @@ defmodule OMG.TestHelper do
   @empty_metadata <<0::256>>
 
   # Deterministic entities. Use only when truly needed.
-  def entities_stable(),
-    do: %{
+  def entities_stable() do
+    %{
       stable_alice: %{
         priv:
           <<54, 43, 207, 67, 140, 160, 190, 135, 18, 162, 70, 120, 36, 245, 106, 165, 5, 101, 183, 55, 11, 117, 126,
@@ -45,17 +45,18 @@ defmodule OMG.TestHelper do
         addr: <<48, 120, 88, 246, 235, 202, 79, 121, 216, 73, 40, 199, 165, 186, 120, 113, 36, 119, 87, 207>>
       }
     }
+  end
 
-  def entities(),
-    do:
-      Map.merge(
-        %{
-          alice: generate_entity(),
-          bob: generate_entity(),
-          carol: generate_entity()
-        },
-        entities_stable()
-      )
+  def entities() do
+    Map.merge(
+      %{
+        alice: generate_entity(),
+        bob: generate_entity(),
+        carol: generate_entity()
+      },
+      entities_stable()
+    )
+  end
 
   @spec generate_entity :: entity()
   def generate_entity() do
@@ -100,11 +101,12 @@ defmodule OMG.TestHelper do
   end
 
   def create_encoded_fee_tx(blknum, owner, currency, amount) do
-    %Transaction.Signed{
+    transaction = %Transaction.Signed{
       raw_tx: Transaction.Fee.new(blknum, {owner, currency, amount}),
       sigs: []
     }
-    |> Transaction.Signed.encode()
+
+    Transaction.Signed.encode(transaction)
   end
 
   def create_recovered_fee_tx(blknum, owner, currency, amount),
@@ -148,8 +150,9 @@ defmodule OMG.TestHelper do
 
   def sign_encode(%{} = tx, priv_keys), do: tx |> DevCrypto.sign(priv_keys) |> Transaction.Signed.encode()
 
-  def sign_recover!(%{} = tx, priv_keys),
-    do: tx |> sign_encode(priv_keys) |> Transaction.Recovered.recover_from!()
+  def sign_recover!(%{} = tx, priv_keys) do
+    tx |> sign_encode(priv_keys) |> Transaction.Recovered.recover_from!()
+  end
 
   @doc """
   Always creates file in the priv/ folder of the application.
@@ -198,6 +201,5 @@ defmodule OMG.TestHelper do
     |> Map.new()
   end
 
-  defp get_private_keys(inputs),
-    do: Enum.map(inputs, fn {_, _, _, owner} -> owner.priv end)
+  defp get_private_keys(inputs), do: Enum.map(inputs, fn {_, _, _, owner} -> owner.priv end)
 end
