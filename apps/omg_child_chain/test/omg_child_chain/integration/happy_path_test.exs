@@ -24,9 +24,8 @@ defmodule OMG.ChildChain.Integration.HappyPathTest do
   require OMG.Utxo
 
   alias OMG.Block
-
   alias OMG.Eth.Configuration
-
+  alias OMG.Eth.Client
   alias OMG.State.Transaction
 
   alias OMG.Utils.HttpRPC.Encoding
@@ -37,6 +36,7 @@ defmodule OMG.ChildChain.Integration.HappyPathTest do
 
   require Logger
   @moduletag :live_childchain
+
   # bumping the timeout to two minutes for the tests here, as they do a lot of transactions to Ethereum to test
   @moduletag timeout: 120_000
 
@@ -44,12 +44,14 @@ defmodule OMG.ChildChain.Integration.HappyPathTest do
   @interval Configuration.child_block_interval()
   @sleep_retry_sec 1000
   @retry_count 50
-  # @tag fixtures: [:alice, :alice_deposits]
-  # ,
-  # %{alice: alice, alice_deposits: {deposit_blknum, _}} 
+  @deposit_finality_margin 10
+
   test "check that unspent funds can be exited with in-flight exits" do
     [alice] = take_accounts(1)
     deposit_blknum = prepare_deposits(alice)
+    exiters_finality_margin = @deposit_finality_margin + 1
+    {:ok, eth_height} = Client.get_ethereum_height()
+    DevHelper.wait_for_root_chain_block(eth_height + exiters_finality_margin)
     # create transaction, submit, wait for block publication
     tx = OMG.TestHelper.create_signed([{deposit_blknum, 0, 0, alice}], @eth, [{alice, 5}, {alice, 4}])
     {:ok, %{"blknum" => blknum, "txindex" => txindex}} = tx |> Transaction.Signed.encode() |> submit_transaction()
@@ -81,8 +83,7 @@ defmodule OMG.ChildChain.Integration.HappyPathTest do
       )
       |> DevHelper.transact_sync!()
 
-    deposit_finality_margin = 10
-    exiters_finality_margin = deposit_finality_margin + 1
+    exiters_finality_margin = @deposit_finality_margin + 10
     DevHelper.wait_for_root_chain_block(eth_height + exiters_finality_margin)
 
     # check that output of 1st transaction was spend by in-flight exit
@@ -90,6 +91,9 @@ defmodule OMG.ChildChain.Integration.HappyPathTest do
     assert {:error, %{"code" => "submit:utxo_not_found"}} = submit_transaction(tx_double_spend)
 
     deposit_blknum = DepositHelper.deposit_to_child_chain(alice.addr, 10)
+    exiters_finality_margin = @deposit_finality_margin + 1
+    {:ok, eth_height} = Client.get_ethereum_height()
+    DevHelper.wait_for_root_chain_block(eth_height + exiters_finality_margin)
 
     %Transaction.Signed{sigs: sigs} =
       in_flight_tx2 = OMG.TestHelper.create_signed([{deposit_blknum, 0, 0, alice}], @eth, [{alice, 6}, {alice, 3}])
@@ -113,11 +117,12 @@ defmodule OMG.ChildChain.Integration.HappyPathTest do
       )
       |> DevHelper.transact_sync!()
 
-    DevHelper.wait_for_root_chain_block(eth_height + exiters_finality_margin)
+    DevHelper.wait_for_root_chain_block(eth_height + 2)
 
     # piggyback only to the first transaction's output & wait for finalization
     {:ok, %{"status" => "0x1", "blockNumber" => eth_height}} =
-      RootChainHelper.piggyback_in_flight_exit_on_output(in_flight_tx2_rawbytes, 0, alice.addr)
+      in_flight_tx2_rawbytes
+      |> RootChainHelper.piggyback_in_flight_exit_on_output(0, alice.addr)
       |> DevHelper.transact_sync!()
 
     DevHelper.wait_for_root_chain_block(eth_height + exiters_finality_margin)
@@ -136,8 +141,9 @@ defmodule OMG.ChildChain.Integration.HappyPathTest do
   end
 
   # @tag fixtures: [:alice, :alice_deposits]
-  test "check in-flight exit input piggybacking is ignored by the child chain",
-       %{alice: alice, alice_deposits: {deposit_blknum, _}} do
+  test "check in-flight exit input piggybacking is ignored by the child chain" do
+    [alice] = take_accounts(1)
+    deposit_blknum = prepare_deposits(alice)
     # create transaction, submit, wait for block publication
     tx = OMG.TestHelper.create_signed([{deposit_blknum, 0, 0, alice}], @eth, [{alice, 9}])
     {:ok, %{"blknum" => blknum, "txindex" => txindex}} = tx |> Transaction.Signed.encode() |> submit_transaction()
@@ -176,7 +182,8 @@ defmodule OMG.ChildChain.Integration.HappyPathTest do
   end
 
   # @tag fixtures: [:alice]
-  test "check submitted fee transaction is rejected", %{alice: alice} do
+  test "check submitted fee transaction is rejected" do
+    [alice] = take_accounts(1)
     fee_tx = OMG.TestHelper.create_encoded_fee_tx(1000, alice.addr, @eth, 1000)
 
     assert {:error, %{"code" => "submit:transaction_not_supported"}} = submit_transaction(fee_tx)
@@ -347,7 +354,6 @@ defmodule OMG.ChildChain.Integration.HappyPathTest do
     some_value = 10
 
     deposit_blknum = DepositHelper.deposit_to_child_chain(alice.addr, some_value)
-    Process.sleep(11_000)
     deposit_blknum
   end
 end

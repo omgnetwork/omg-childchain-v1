@@ -49,7 +49,7 @@ config :omg,
   ethereum_events_check_interval_ms: 10,
   coordinator_eth_height_check_interval_ms: 10,
   environment: :test,
-  fee_claimer_address: Base.decode16!("DEAD000000000000000000000000000000000000")
+  fee_claimer_address: <<59, 159, 76, 29, 210, 110, 11, 229, 147, 55, 59, 29, 54, 206, 226, 0, 140, 190, 184, 55>>
 
 config :omg_child_chain,
   block_queue_eth_height_check_interval_ms: 100,

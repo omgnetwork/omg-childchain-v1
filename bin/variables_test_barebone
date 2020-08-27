@@ -9,7 +9,7 @@ export EXIT_PROCESSOR_SLA_MARGIN=30
 # the rest stays same as bin/variables
 export APP_ENV=local-development
 export HOSTNAME=http://localhost/
-export DB_PATH=~/plasma-data/
+export DB_PATH=data/plasma-data/
 export ETHEREUM_RPC_URL=http://127.0.0.1:8555
 export ETH_NODE=geth
 export ETHEREUM_NETWORK=LOCALCHAIN
@@ -21,7 +21,7 @@ export ETHEREUM_STALLED_SYNC_THRESHOLD_MS=20000
 export FEE_CLAIMER_ADDRESS=0x3b9f4c1dd26e0be593373b1d36cee2008cbeb837
 export FEE_ADAPTER=file
 # Fee specs file path needs to be an absolute path as the childchain will start deep in the _build subdirectory
-export FEE_SPECS_FILE_PATH=$(pwd)/priv/dev-artifacts/fee_specs.dev.json
+export FEE_SPECS_FILE_PATH=$(pwd)/priv/dev-artifacts/fee_specs.test.json
 export DD_HOSTNAME=localhost
 export DD_DISABLED=true
 export LOGGER_BACKEND=console
