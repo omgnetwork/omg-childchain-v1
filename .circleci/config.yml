@@ -570,6 +570,10 @@ jobs:
           name: Start geth, postgres and pull in blockchain snapshot
           command: make start-services
           background: true
+      - run:
+          name: Start Watchers
+          command: docker-compose up watcher watcher_info
+          background: true
       - run: echo 'export PATH=~/.cargo/bin:$PATH' >> $BASH_ENV
       - restore_cache:
           key: v2-asdf-install
@@ -754,8 +758,8 @@ workflows:
       - integration_tests:
           requires: [build]
       - barebuild_macos
-      # - test_barebone_release:
-      #     requires: [build]
+      - test_barebone_release:
+          requires: [build]
   build-test-deploy:
     jobs:
       - build:
@@ -764,9 +768,9 @@ workflows:
               only: /.+/
             tags:
               only: /.+/
-      # - test_barebone_release:
-      #     requires: [build]
-      #     filters: *all_branches_and_tags
+      - test_barebone_release:
+          requires: [build]
+          filters: *all_branches_and_tags
       - notify_services:
           requires: [deploy_child_chain]
           filters:
