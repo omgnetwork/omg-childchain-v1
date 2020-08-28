@@ -1,5 +1,0 @@
-BlockValidateSchema:
-  type: object
-  properties:
-    valid:
-      type: boolean
