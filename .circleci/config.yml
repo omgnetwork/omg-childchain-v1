@@ -570,10 +570,6 @@ jobs:
           name: Start geth, postgres and pull in blockchain snapshot
           command: make start-services
           background: true
-      - run:
-          name: Start Watchers
-          command: docker-compose up watcher watcher_info
-          background: true
       - run: echo 'export PATH=~/.cargo/bin:$PATH' >> $BASH_ENV
       - restore_cache:
           key: v2-asdf-install
@@ -621,24 +617,14 @@ jobs:
             - "_build/dev/"
             - "_build/dev/"
       - run:
+          name: Start Watchers
+          command: docker-compose up watcher watcher_info
+          background: true
+      - run:
           name: Run Child Chain
           command: |
             set -e
             make start-child_chain OVERRIDING_START=start_iex OVERRIDING_VARIABLES=./bin/variables_test_barebone
-          background: true
-          no_output_timeout: 2400
-      - run:
-          name: Run Watcher
-          command: |
-            set -e
-            make start-watcher OVERRIDING_START=start_iex OVERRIDING_VARIABLES=./bin/variables_test_barebone
-          background: true
-          no_output_timeout: 2400
-      - run:
-          name: Run Watcher Info
-          command: |
-            set -e
-            make start-watcher_info OVERRIDING_START=start_iex OVERRIDING_VARIABLES=./bin/variables_test_barebone
           background: true
           no_output_timeout: 2400
       - run:
