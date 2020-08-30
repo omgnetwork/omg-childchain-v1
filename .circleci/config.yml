@@ -444,7 +444,8 @@ jobs:
             make install
             make generate_api_code
             mix local.hex --force
-            mix local.rebar rebar3 --force
+            mix local.rebar --force
+            mix local.rebar3 --force
             mix deps.get
             mix test
       - run:
@@ -561,7 +562,8 @@ jobs:
             make install
             make generate_api_code
             mix local.hex --force
-            mix local.rebar rebar3 --force
+            mix local.rebar --force
+            mix local.rebar3 --force
             mix deps.get
             mix test --only reorg --trace
           no_output_timeout: 30m
@@ -624,7 +626,7 @@ jobs:
           command: |
             set -e
             mix deps.get 
-            make start-child_chain OVERRIDING_START=start_iex OVERRIDING_VARIABLES=./bin/variables_test_barebone
+            export CXX="g++-9" make start-child_chain OVERRIDING_START=start_iex OVERRIDING_VARIABLES=./bin/variables_test_barebone
           background: true
           no_output_timeout: 2400
       - save_cache:
@@ -639,7 +641,8 @@ jobs:
           command: |
             cd priv/cabbage
             mix local.hex --force
-            mix local.rebar rebar3 --force
+            mix local.rebar --force
+            mix local.rebar3 --force
             make install
             make generate_api_code
             mix deps.get
