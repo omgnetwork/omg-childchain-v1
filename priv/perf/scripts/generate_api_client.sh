@@ -34,6 +34,7 @@ echo "------------------------------------------------------"
 echo "Generating watcher security clients..."
 echo "------------------------------------------------------"
 docker run --rm \
+    -v ${PWD}/apps:/apps \
     --user $(id -u):$(id -g) \
     openapitools/openapi-generator-cli generate \
     -i https://raw.githubusercontent.com/omgnetwork/elixir-omg/master/apps/omg_watcher_rpc/priv/swagger/security_critical_api_specs.yaml \
