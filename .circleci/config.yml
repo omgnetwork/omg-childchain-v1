@@ -156,7 +156,7 @@ jobs:
       - run: make deps-elixir-omg
       - run: ERLANG_ROCKSDB_BUILDOPTS='-j 2' make build-test
       - save_cache:
-          key: v2-mix-cache-test-compile-{{ checksum "mix.lock" }}-{{ .Branch }}-{{ .Revision }}
+          key: v3-mix-cache-test-compile-{{ checksum "mix.lock" }}-{{ .Branch }}-{{ .Revision }}
           paths: "_build_docker"
       - save_cache:
           key: v1-rocksdb-cache-{{ checksum "mix.lock" }}
@@ -274,7 +274,7 @@ jobs:
       - setup_elixir-omg_workspace
       - restore_cache:
           keys:
-            - v2-mix-cache-test-compile-{{ checksum "mix.lock" }}-{{ .Branch }}-{{ .Revision }}
+            - v3-mix-cache-test-compile-{{ checksum "mix.lock" }}-{{ .Branch }}-{{ .Revision }}
       - run:
           name: Compile
           command: mix compile
@@ -299,7 +299,7 @@ jobs:
       - setup_elixir-omg_workspace
       - restore_cache:
           keys:
-            - v2-mix-cache-test-compile-{{ checksum "mix.lock" }}-{{ .Branch }}-{{ .Revision }}
+            - v3-mix-cache-test-compile-{{ checksum "mix.lock" }}-{{ .Branch }}-{{ .Revision }}
       - run:
           name: Compile
           command: mix compile
@@ -324,7 +324,7 @@ jobs:
       - setup_elixir-omg_workspace
       - restore_cache:
           keys:
-            - v2-mix-cache-test-compile-{{ checksum "mix.lock" }}-{{ .Branch }}-{{ .Revision }}
+            - v3-mix-cache-test-compile-{{ checksum "mix.lock" }}-{{ .Branch }}-{{ .Revision }}
       - run:
           name: Compile
           command: mix compile
@@ -349,7 +349,7 @@ jobs:
       - setup_elixir-omg_workspace
       - restore_cache:
           keys:
-            - v2-mix-cache-test-compile-{{ checksum "mix.lock" }}-{{ .Branch }}-{{ .Revision }}
+            - v3-mix-cache-test-compile-{{ checksum "mix.lock" }}-{{ .Branch }}-{{ .Revision }}
       - run:
           name: Compile
           command: mix compile
@@ -368,7 +368,7 @@ jobs:
       - setup_elixir-omg_workspace
       - restore_cache:
           keys:
-            - v2-mix-cache-test-compile-{{ checksum "mix.lock" }}-{{ .Branch }}-{{ .Revision }}
+            - v3-mix-cache-test-compile-{{ checksum "mix.lock" }}-{{ .Branch }}-{{ .Revision }}
       - run:
           name: Compile
           command: mix compile
@@ -610,21 +610,7 @@ jobs:
           no_output_timeout: 2400
       - run: make install-hex-rebar
       - restore_cache:
-          key: v1-dev-release-cache-{{ checksum "mix.lock" }}
-      - run:
-          name: Compile
-          command: |
-            set -e
-            make deps-elixir-omg
-            mix compile
-          no_output_timeout: 2400
-      - save_cache:
-          key: v1-dev-release-cache-{{ checksum "mix.lock" }}
-          paths:
-            - "deps_docker/"
-            - "deps/"
-            - "_build/dev/"
-            - "_build/dev/"
+          key: v2-dev-release-cache-{{ checksum "mix.lock" }}
       - run:
           name: Start Watchers
           command: docker-compose up watcher watcher_info
@@ -633,9 +619,17 @@ jobs:
           name: Run Child Chain
           command: |
             set -e
+            mix deps.get 
             make start-child_chain OVERRIDING_START=start_iex OVERRIDING_VARIABLES=./bin/variables_test_barebone
           background: true
           no_output_timeout: 2400
+      - save_cache:
+          key: v2-dev-release-cache-{{ checksum "mix.lock" }}
+          paths:
+            - "deps_docker/"
+            - "deps/"
+            - "_build/dev/"
+            - "_build/dev/"
       - run:
           name: Install specs
           command: |
