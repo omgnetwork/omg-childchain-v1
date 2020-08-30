@@ -443,6 +443,7 @@ jobs:
             cd priv/cabbage
             make install
             make generate_api_code
+            mix local.hex --force
             mix deps.get
             mix test
       - run:
@@ -558,6 +559,7 @@ jobs:
             cd priv/cabbage
             make install
             make generate_api_code
+            mix local.hex --force
             mix deps.get
             mix test --only reorg --trace
           no_output_timeout: 30m
@@ -634,6 +636,7 @@ jobs:
           name: Install specs
           command: |
             cd priv/cabbage
+            mix local.hex --force
             make install
             make generate_api_code
             mix deps.get
@@ -649,6 +652,7 @@ jobs:
           name: Run specs
           command: |
             cd priv/cabbage
+            mix local.hex --force
             mix test
 
   publish_child_chain:
