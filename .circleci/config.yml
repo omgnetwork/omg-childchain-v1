@@ -624,10 +624,6 @@ jobs:
       - restore_cache:
           key: v2-dev-release-cache-{{ checksum "mix.lock" }}
       - run:
-          name: Start Watchers
-          command: docker-compose up watcher watcher_info
-          background: true
-      - run:
           name: Run Child Chain
           command: |
             set -e
@@ -635,6 +631,11 @@ jobs:
             make start-child_chain OVERRIDING_START=start_iex OVERRIDING_VARIABLES=./bin/variables_test_barebone
           background: true
           no_output_timeout: 2400
+      - run: sleep 120 
+      - run:
+          name: Start Watchers
+          command: docker-compose up watcher watcher_info
+          background: true
       - save_cache:
           key: v2-dev-release-cache-{{ checksum "mix.lock" }}
           paths:
