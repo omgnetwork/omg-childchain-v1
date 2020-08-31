@@ -641,27 +641,27 @@ jobs:
             - "deps/"
             - "_build/dev/"
             - "_build/dev/"
-      # - run:
-      #     name: Install specs
-      #     command: |
-      #       make install-hex-rebar
-      #       cd priv/cabbage
-      #       mix deps.get
-      #       make install
-      #       make generate_api_code
-      # - run:
-      #     name: Print docker and process states
-      #     command: |
-      #       docker ps
-      #       ps axww | grep watcher
-      #       ps axww | grep watcher_info
-      #       ps axww | grep child_chain
-      # - run: sh .circleci/status.sh
-      # - run:
-      #     name: Run specs
-      #     command: |
-      #       cd priv/cabbage
-      #       mix test
+      - run:
+          name: Install specs
+          command: |
+            make install-hex-rebar
+            cd priv/cabbage
+            mix deps.get
+            make install
+            make generate_api_code
+      - run:
+          name: Print docker and process states
+          command: |
+            docker ps
+            ps axww | grep watcher
+            ps axww | grep watcher_info
+            ps axww | grep child_chain
+      - run: sh .circleci/status.sh
+      - run:
+          name: Run specs
+          command: |
+            cd priv/cabbage
+            mix test
 
   publish_child_chain:
     machine:
