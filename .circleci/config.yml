@@ -581,7 +581,7 @@ jobs:
     steps:
       - checkout
       # Enable forwarding from Docker containers to the outside world
-      - run: sysctl net.ipv4.conf.all.forwarding=1
+      - run: sudo sysctl net.ipv4.conf.all.forwarding=1
       - run: sudo iptables -P FORWARD ACCEPT
       - run:
           name: "Pull Submodules"
