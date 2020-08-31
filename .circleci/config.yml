@@ -440,42 +440,42 @@ jobs:
       - run:
           name: Install HEX REBAR
           command: make install-hex-rebar
-      - run:
-          name: Openapi install
-          command: make install
-          working_directory: ~/src/priv/cabbage
-      - run:
-          name: API code
-          working_directory: ~/src/priv/cabbage
-          command: |
-            make generate_api_code
-      - run:
-          name: Deps get
-          working_directory: ~/src/priv/cabbage
-          command: mix deps.get
-      - run:
-          name: Test
-          working_directory: ~/src/priv/cabbage
-          command: mix test
-      - run:
-          name: (Cabbage) Format generated code and check for warnings
-          command: |
-            cd priv/cabbage
-            # run format ONLY on formatted code so that it cleans up quoted atoms because
-            # we cannot exclude folders to --warnings-as-errors
-            mix format apps/child_chain_api/lib/child_chain_api/model/*.ex
-            mix format apps/watcher_info_api/lib/watcher_info_api/model/*.ex
-            mix format apps/watcher_security_critical_api/lib/watcher_security_critical_api/model/*.ex
-            MIX_ENV=test mix do compile --warnings-as-errors --ignore-module-conflict --force, test --exclude test
-      - save_cache:
-          key: v2-mix-specs-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
-          paths:
-            - "priv/cabbage/deps"
-      - run:
-          name: (Cabbage) Credo and formatting
-          command: |
-            cd priv/cabbage
-            mix do credo, format --check-formatted --dry-run
+      # - run:
+      #     name: Openapi install
+      #     command: make install
+      #     working_directory: ~/src/priv/cabbage
+      # - run:
+      #     name: API code
+      #     working_directory: ~/src/priv/cabbage
+      #     command: |
+      #       make generate_api_code
+      # - run:
+      #     name: Deps get
+      #     working_directory: ~/src/priv/cabbage
+      #     command: mix deps.get
+      # - run:
+      #     name: Test
+      #     working_directory: ~/src/priv/cabbage
+      #     command: mix test
+      # - run:
+      #     name: (Cabbage) Format generated code and check for warnings
+      #     command: |
+      #       cd priv/cabbage
+      #       # run format ONLY on formatted code so that it cleans up quoted atoms because
+      #       # we cannot exclude folders to --warnings-as-errors
+      #       mix format apps/child_chain_api/lib/child_chain_api/model/*.ex
+      #       mix format apps/watcher_info_api/lib/watcher_info_api/model/*.ex
+      #       mix format apps/watcher_security_critical_api/lib/watcher_security_critical_api/model/*.ex
+      #       MIX_ENV=test mix do compile --warnings-as-errors --ignore-module-conflict --force, test --exclude test
+      # - save_cache:
+      #     key: v2-mix-specs-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+      #     paths:
+      #       - "priv/cabbage/deps"
+      # - run:
+      #     name: (Cabbage) Credo and formatting
+      #     command: |
+      #       cd priv/cabbage
+      #       mix do credo, format --check-formatted --dry-run
 
   test_docker_compose_performance:
     machine:
