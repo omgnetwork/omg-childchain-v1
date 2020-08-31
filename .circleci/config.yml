@@ -440,24 +440,24 @@ jobs:
       - run:
           name: Openapi install
           command: make install
-          working_directory: ~/src/priv/cabbage
+          working_directory: ~/project/priv/cabbage
       - run:
           name: API code
-          working_directory: ~/src/priv/cabbage
+          working_directory: ~/project/priv/cabbage
           command: |
             make generate_api_code
       - run:
           name: Deps get
-          working_directory: ~/src/priv/cabbage
+          working_directory: ~/project/priv/cabbage
           command: mix deps.get
       - run:
           name: Test
-          working_directory: ~/src/priv/cabbage
+          working_directory: ~/project/priv/cabbage
           command: mix test
       - run:
           name: (Cabbage) Format generated code and check for warnings
+          working_directory: ~/project/priv/cabbage
           command: |
-            cd priv/cabbage
             # run format ONLY on formatted code so that it cleans up quoted atoms because
             # we cannot exclude folders to --warnings-as-errors
             mix format apps/child_chain_api/lib/child_chain_api/model/*.ex
