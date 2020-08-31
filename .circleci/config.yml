@@ -580,9 +580,6 @@ jobs:
       TERM: xterm-256color
     steps:
       - checkout
-      # Enable forwarding from Docker containers to the outside world
-      - run: sudo sysctl net.ipv4.conf.all.forwarding=1
-      - run: sudo iptables -P FORWARD ACCEPT
       - run:
           name: "Pull Submodules"
           command: |
@@ -638,7 +635,7 @@ jobs:
       - run:
           name: Start Watchers
           environment:
-            CHILD_CHAIN_URL: http://172.27.0.1:9656
+            CHILD_CHAIN_URL: http://172.17.0.1:9656
           command: docker-compose up watcher watcher_info
           background: true
       - save_cache:
