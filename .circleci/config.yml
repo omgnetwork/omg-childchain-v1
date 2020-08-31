@@ -438,14 +438,26 @@ jobs:
             make start_daemon_services-2 || (START_RESULT=$?; docker-compose logs; exit $START_RESULT;)
       - install_elixir_and_check_docker_status
       - run:
-          name: Run specs
+          name: Install HEX REBAR
           command: |
             make install-hex-rebar
-            cd priv/cabbage
-            make install
+      - run:
+          name: Openapi install
+          command: make install
+          working_directory: ~/repo/priv/cabbage
+      - run:
+          name: API code
+          working_directory: ~/repo/priv/cabbage
+          command: |
             make generate_api_code
-            mix deps.get
-            mix test
+      - run:
+          name: Deps get
+          working_directory: ~/repo/priv/cabbage
+          command: mix deps.get
+      - run:
+          name: Test
+          working_directory: ~/repo/priv/cabbage
+          command: mix test
       - run:
           name: (Cabbage) Format generated code and check for warnings
           command: |
