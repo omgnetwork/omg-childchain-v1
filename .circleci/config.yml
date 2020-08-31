@@ -71,7 +71,7 @@ commands:
             docker image ls
             docker-compose ps
       - restore_cache:
-          key: v2-asdf-install
+          key: v3-asdf-install
       - run:
           name: Install Erlang and Elixir
           command: |
@@ -83,7 +83,7 @@ commands:
             asdf install
           no_output_timeout: 2400
       - save_cache:
-          key: v2-asdf-install
+          key: v3-asdf-install
           paths:
             - ~/.asdf
             - ~/.asdf-vm
@@ -592,7 +592,7 @@ jobs:
           background: true
       - run: echo 'export PATH=~/.cargo/bin:$PATH' >> $BASH_ENV
       - restore_cache:
-          key: v2-asdf-install
+          key: v3-asdf-install
       - run:
           name: Install Erlang and Elixir
           command: |
@@ -604,7 +604,7 @@ jobs:
             asdf install
           no_output_timeout: 2400
       - save_cache:
-          key: v2-asdf-install
+          key: v3-asdf-install
           paths:
             - ~/.asdf
             - ~/.asdf-vm
