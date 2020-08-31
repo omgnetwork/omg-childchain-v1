@@ -580,6 +580,9 @@ jobs:
       TERM: xterm-256color
     steps:
       - checkout
+      # Enable forwarding from Docker containers to the outside world
+      - run: sysctl net.ipv4.conf.all.forwarding=1
+      - run: sudo iptables -P FORWARD ACCEPT
       - run:
           name: "Pull Submodules"
           command: |
@@ -657,8 +660,6 @@ jobs:
           name: Print docker and process states
           command: |
             docker ps
-            ps axww | grep watcher
-            ps axww | grep watcher_info
             ps axww | grep child_chain
       - run: sh .circleci/status.sh
       - run:
