@@ -635,7 +635,7 @@ jobs:
       - run:
           name: Start Watchers
           environment:
-            CHILD_CHAIN_URL: http://127.0.0.1:9656
+            CHILD_CHAIN_URL: http://172.27.0.1:9656
           command: docker-compose up watcher watcher_info
           background: true
       - save_cache:
