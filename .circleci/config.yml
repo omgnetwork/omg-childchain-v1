@@ -586,11 +586,11 @@ jobs:
             git submodule init
             git submodule update --remote
       - run: echo 'export PATH=~/.cargo/bin:$PATH' >> $BASH_ENV
-      - run: sudo chmod 777 data/
       - run:
           name: Start geth, postgres and pull in blockchain snapshot
           command: make start-services
           background: true
+      - run: sudo chmod 777 data/
       - run: echo 'export PATH=~/.cargo/bin:$PATH' >> $BASH_ENV
       - restore_cache:
           key: v4-asdf-install
