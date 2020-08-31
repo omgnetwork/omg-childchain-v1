@@ -62,7 +62,7 @@ commands:
       #- run: make docker-watcher
       #- run: make docker-watcher_info
 
-  install_elixir_and_check_docker_status:
+  install_elixir:
     description: Installs elixir and checks if docker is healthy
     steps:
       - run:
@@ -88,7 +88,6 @@ commands:
             - ~/.asdf
             - ~/.asdf-vm
       - run: make install-hex-rebar
-      - run: sh .circleci/status.sh
       - restore_cache:
           key: v2-mix-specs-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
 
@@ -436,10 +435,8 @@ jobs:
           command: |
             cd priv/cabbage
             make start_daemon_services-2 || (START_RESULT=$?; docker-compose logs; exit $START_RESULT;)
-      - install_elixir_and_check_docker_status
-      - run:
-          name: Install HEX REBAR
-          command: make install-hex-rebar
+      - install_elixir
+      - run: sh .circleci/status.sh
       # - run:
       #     name: Openapi install
       #     command: make install
@@ -491,7 +488,8 @@ jobs:
           name: Start daemon services
           command: |
             SNAPSHOT=SNAPSHOT_MIX_EXIT_PERIOD_SECONDS_120 make init_test && docker-compose -f ./docker-compose.yml up -d || (START_RESULT=$?; docker-compose logs; exit $START_RESULT;)
-      - install_elixir_and_check_docker_status
+      - install_elixir
+      - run: sh .circleci/status.sh
       - run:
           name: Run load test
           command: |
@@ -543,7 +541,8 @@ jobs:
           command: |
             cd priv/cabbage
             make start_daemon_services_reorg-2 || (START_RESULT=$?; docker-compose logs; exit $START_RESULT;)
-      - install_elixir_and_check_docker_status
+      - install_elixir
+      - run: sh .circleci/status.sh
       - run:
           name: Print watcher logs
           command: make cabbage-reorg-watcher-logs
