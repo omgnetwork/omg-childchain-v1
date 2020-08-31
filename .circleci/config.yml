@@ -440,12 +440,10 @@ jobs:
       - run:
           name: Run specs
           command: |
+            make install-hex-rebar
             cd priv/cabbage
             make install
             make generate_api_code
-            mix local.hex --force
-            mix local.rebar --force
-            mix local.rebar3 --force
             mix deps.get
             mix test
       - run:
@@ -561,9 +559,6 @@ jobs:
             cd priv/cabbage
             make install
             make generate_api_code
-            mix local.hex --force
-            mix local.rebar --force
-            mix local.rebar3 --force
             mix deps.get
             mix test --only reorg --trace
           no_output_timeout: 30m
@@ -623,10 +618,12 @@ jobs:
           background: true
       - run:
           name: Run Child Chain
+          environment:
+            CXX: "g++-9"
           command: |
             set -e
             mix deps.get 
-            export CXX="g++-9" make start-child_chain OVERRIDING_START=start_iex OVERRIDING_VARIABLES=./bin/variables_test_barebone
+            make start-child_chain OVERRIDING_START=start_iex OVERRIDING_VARIABLES=./bin/variables_test_barebone
           background: true
           no_output_timeout: 2400
       - save_cache:
@@ -639,13 +636,11 @@ jobs:
       - run:
           name: Install specs
           command: |
+            make install-hex-rebar
             cd priv/cabbage
-            mix local.hex --force
-            mix local.rebar --force
-            mix local.rebar3 --force
+            mix deps.get
             make install
             make generate_api_code
-            mix deps.get
       - run:
           name: Print docker and process states
           command: |
