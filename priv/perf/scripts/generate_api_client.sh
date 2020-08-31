@@ -35,10 +35,9 @@ echo "Generating watcher security clients..."
 echo "------------------------------------------------------"
 docker run --rm \
     -v ${PWD}/apps:/apps \
-    -v ${PWD}/../../apps/omg_watcher_rpc/priv/swagger/:/swagger \
     --user $(id -u):$(id -g) \
     openapitools/openapi-generator-cli generate \
-    -i /swagger/security_critical_api_specs.yaml \
+    -i https://raw.githubusercontent.com/omgnetwork/elixir-omg/master/apps/omg_watcher_rpc/priv/swagger/security_critical_api_specs.yaml \
     -g elixir \
     -o /apps/watcher_security_critical_api/
 
@@ -47,10 +46,9 @@ echo "Generating watcher info clients..."
 echo "------------------------------------------------------"
 docker run --rm \
     -v ${PWD}/apps:/apps \
-    -v ${PWD}/../../apps/omg_watcher_rpc/priv/swagger/:/swagger \
     --user $(id -u):$(id -g) \
     openapitools/openapi-generator-cli generate \
-    -i /swagger/info_api_specs.yaml \
+    -i https://raw.githubusercontent.com/omgnetwork/elixir-omg/master/apps/omg_watcher_rpc/priv/swagger/info_api_specs.yaml \
     -g elixir \
     -o /apps/watcher_info_api/
 

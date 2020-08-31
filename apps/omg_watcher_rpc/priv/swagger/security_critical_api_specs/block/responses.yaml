@@ -1,6 +1,0 @@
-BlockValidateResponse:
-  description: Successful response to calling /block.validate
-  content:
-    application/json:
-      schema:
-        $ref: 'response_schemas.yaml#/BlockValidateResponseSchema'

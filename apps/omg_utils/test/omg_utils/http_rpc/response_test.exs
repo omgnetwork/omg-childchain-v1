@@ -16,7 +16,6 @@ defmodule OMG.Utils.HttpRPC.ResponseTest do
   use ExUnit.Case, async: true
 
   alias OMG.Utils.HttpRPC.Response
-  alias OMG.WatcherInfo.DB
 
   @cleaned_tx %{
     blknum: nil,
@@ -29,32 +28,12 @@ defmodule OMG.Utils.HttpRPC.ResponseTest do
     updated_at: nil
   }
 
-  setup %{} do
-    load_ecto()
-    :ok
-  end
-
   describe "test sanitization without ecto preloaded" do
     test "cleaning response: simple value list works without ecto loaded" do
-      unload_ecto()
       value = [nil, 1, "01234", :atom, [], %{}, {:skip_hex_encode, "an arbitrary string"}]
       expected_value = [nil, 1, "0x3031323334", :atom, [], %{}, "an arbitrary string"]
       assert expected_value == Response.sanitize(value)
     end
-
-    test "cleaning response structure: list of maps when ecto unloaded" do
-      unload_ecto()
-      refute [@cleaned_tx, @cleaned_tx] == Response.sanitize([%DB.Transaction{}, %DB.Transaction{}])
-    end
-  end
-
-  test "cleaning response structure: map of maps" do
-    assert %{first: @cleaned_tx, second: @cleaned_tx} ==
-             Response.sanitize(%{second: %DB.Transaction{}, first: %DB.Transaction{}})
-  end
-
-  test "cleaning response structure: list of maps" do
-    assert [@cleaned_tx, @cleaned_tx] == Response.sanitize([%DB.Transaction{}, %DB.Transaction{}])
   end
 
   test "cleaning response: simple value list" do
@@ -166,12 +145,4 @@ defmodule OMG.Utils.HttpRPC.ResponseTest do
       assert {:ok, _} = Version.parse(version)
     end
   end
-
-  defp unload_ecto() do
-    :code.purge(Ecto)
-    :code.delete(Ecto)
-    false = :code.is_loaded(Ecto)
-  end
-
-  defp load_ecto(), do: true = Code.ensure_loaded?(Ecto)
 end

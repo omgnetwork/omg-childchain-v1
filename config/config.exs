@@ -152,81 +152,10 @@ config :os_mon,
   system_memory_high_watermark: 1.00,
   process_memory_high_watermark: 1.00
 
-config :omg_watcher, child_chain_url: "http://localhost:9656"
-
-config :omg_watcher,
-  # 23 hours worth of blocks - this is how long the child chain server has to block spends from exiting utxos
-  exit_processor_sla_margin: 23 * 60 * 4,
-  # this means we don't want the `sla_margin` above be larger than the `min_exit_period`
-  exit_processor_sla_margin_forced: false,
-  maximum_block_withholding_time_ms: 15 * 60 * 60 * 1000,
-  maximum_number_of_unapplied_blocks: 50,
-  exit_finality_margin: 12,
-  block_getter_reorg_margin: 200,
-  metrics_collection_interval: 60_000
-
-config :omg_watcher, OMG.Watcher.Tracer,
-  service: :omg_watcher,
-  adapter: SpandexDatadog.Adapter,
-  disabled?: true,
-  type: :omg_watcher
-
-config :omg_watcher_info,
-  child_chain_url: "http://localhost:9656",
-  namespace: OMG.WatcherInfo,
-  ecto_repos: [OMG.WatcherInfo.DB.Repo],
-  metrics_collection_interval: 60_000,
-  pending_block_processing_interval: 1000,
-  block_queue_check_interval: 10_000
-
-# Configures the endpoint
-
-config :omg_watcher_info, OMG.WatcherInfo.DB.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  # NOTE: not sure if appropriate, but this allows reasonable blocks to be written to unoptimized Postgres setup
-  timeout: 180_000,
-  connect_timeout: 180_000,
-  url: "postgres://omisego_dev:omisego_dev@localhost/omisego_dev",
-  migration_timestamps: [type: :timestamptz],
-  telemetry_prefix: [:omg, :watcher_info, :db, :repo]
-
-config :omg_watcher_info, OMG.WatcherInfo.Tracer,
-  service: :ecto,
-  adapter: SpandexDatadog.Adapter,
-  disabled?: true,
-  type: :db
-
-# In mix environment, all modules are loaded, therefore it behaves like a watcher_info
-config :omg_watcher_rpc,
-  api_mode: :watcher_info
-
-# Configures the endpoint
-# https://ninenines.eu/docs/en/cowboy/2.4/manual/cowboy_http/
-# defaults are:
-# protocol_options:[max_header_name_length: 64,
-# max_header_value_length: 4096,
-# max_headers: 100,
-# max_request_line_length: 8096
-# ]
-config :omg_watcher_rpc, OMG.WatcherRPC.Web.Endpoint,
-  render_errors: [view: OMG.WatcherRPC.Web.Views.Error, accepts: ~w(json)],
-  enable_cors: true,
-  http: [:inet6, port: 7434, protocol_options: [max_request_line_length: 8192, max_header_value_length: 8192]],
-  url: [host: "w.example.com", port: 80],
-  code_reloader: false
-
 config :phoenix,
   json_library: Jason,
   serve_endpoints: true,
   persistent: true
-
-config :spandex_ecto, SpandexEcto.EctoLogger, tracer: OMG.WatcherInfo.Tracer
-
-config :omg_watcher_rpc, OMG.WatcherRPC.Tracer,
-  service: :web,
-  adapter: SpandexDatadog.Adapter,
-  disabled?: true,
-  type: :web
 
 config :spandex_phoenix, tracer: OMG.WatcherRPC.Tracer
 

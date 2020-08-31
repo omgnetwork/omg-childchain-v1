@@ -214,28 +214,6 @@ Options of the fee adapter, depends on adapter
   - **`fee_change_tolerance_percent`** - [FeedAdapter only!] positive integer describes significance of price change. When price in new reading changes above tolerance level, prices are updated immediately. Otherwise update interval is preserved.
   - **`stored_fee_update_interval_minutes`** - [FeedAdapter only!] positive integer describes time interval in minutes. The updates of token prices are carried out in update intervals as long as the changes are within tolerance.
 
-## Watcher configuration - `:omg_watcher` app
-
-* **`exit_processor_sla_margin`** - the margin to define the notion of a "late", invalid exit.
-After this margin passes, every invalid exit is deemed a critical failure of the child chain (`unchallenged_exit`).
-Such event will prompt a mass exit and stop processing new blocks.
-See [exit validation documentation](docs/exit_validation.md) for details.
-Cannot be larger than `min_exit_period_seconds` because otherwise it leads to a dangerous setup of the Watcher (in particular - muting the reports of unchallenged_exits).
-Override using the `EXIT_PROCESSOR_SLA_MARGIN` system environment variable.
-
-* **`exit_processor_sla_margin_forced`** - if set to `true`, will allow one to set a `exit_processor_sla_margin` that is larger than the `min_exit_period_seconds` of the child chain we're running for.
-Set to `true` only when you know what you are doing.
-Defaults to `false`, override using the `EXIT_PROCESSOR_SLA_MARGIN_FORCED` system environment variable.
-
-* **`maximum_block_withholding_time_ms`** - for how long the Watcher will tolerate failures to get a submitted child chain block, before reporting a block withholding attack and stopping
-
-* **`maximum_number_of_unapplied_blocks`** - the maximum number of downloaded and statelessly validated child chain blocks to hold in queue for applying
-
-* **`exit_finality_margin`** - the margin waited before an exit-related event is considered final enough to pull and process
-
-* **`block_getter_reorg_margin`** - the margin considered by `OMG.Watcher.BlockGetter` when searching for recent child chain block submission events.
-This is driving the process of determining the height and particular event related to the submission of a particular child chain block
-
 ## `OMG.DB` configuration - `:omg_db` app
 
 * **`path`** - path to the directory holding the LevelDB data store
