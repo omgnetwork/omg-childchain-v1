@@ -439,24 +439,23 @@ jobs:
       - install_elixir_and_check_docker_status
       - run:
           name: Install HEX REBAR
-          command: |
-            make install-hex-rebar
+          command: make install-hex-rebar
       - run:
           name: Openapi install
           command: make install
-          working_directory: ~/repo/priv/cabbage
+          working_directory: ~/src/priv/cabbage
       - run:
           name: API code
-          working_directory: ~/repo/priv/cabbage
+          working_directory: ~/src/priv/cabbage
           command: |
             make generate_api_code
       - run:
           name: Deps get
-          working_directory: ~/repo/priv/cabbage
+          working_directory: ~/src/priv/cabbage
           command: mix deps.get
       - run:
           name: Test
-          working_directory: ~/repo/priv/cabbage
+          working_directory: ~/src/priv/cabbage
           command: mix test
       - run:
           name: (Cabbage) Format generated code and check for warnings
