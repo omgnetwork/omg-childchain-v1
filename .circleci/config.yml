@@ -71,7 +71,7 @@ commands:
             docker image ls
             docker-compose ps
       - restore_cache:
-          key: v3-asdf-install
+          key: v4-asdf-install
       - run:
           name: Install Erlang and Elixir
           command: |
@@ -83,7 +83,7 @@ commands:
             asdf install
           no_output_timeout: 2400
       - save_cache:
-          key: v3-asdf-install
+          key: v4-asdf-install
           paths:
             - ~/.asdf
             - ~/.asdf-vm
@@ -592,7 +592,7 @@ jobs:
           background: true
       - run: echo 'export PATH=~/.cargo/bin:$PATH' >> $BASH_ENV
       - restore_cache:
-          key: v3-asdf-install
+          key: v4-asdf-install
       - run:
           name: Install Erlang and Elixir
           command: |
@@ -604,7 +604,7 @@ jobs:
             asdf install
           no_output_timeout: 2400
       - save_cache:
-          key: v3-asdf-install
+          key: v4-asdf-install
           paths:
             - ~/.asdf
             - ~/.asdf-vm
@@ -641,27 +641,27 @@ jobs:
             - "deps/"
             - "_build/dev/"
             - "_build/dev/"
-      - run:
-          name: Install specs
-          command: |
-            make install-hex-rebar
-            cd priv/cabbage
-            mix deps.get
-            make install
-            make generate_api_code
-      - run:
-          name: Print docker and process states
-          command: |
-            docker ps
-            ps axww | grep watcher
-            ps axww | grep watcher_info
-            ps axww | grep child_chain
-      - run: sh .circleci/status.sh
-      - run:
-          name: Run specs
-          command: |
-            cd priv/cabbage
-            mix test
+      # - run:
+      #     name: Install specs
+      #     command: |
+      #       make install-hex-rebar
+      #       cd priv/cabbage
+      #       mix deps.get
+      #       make install
+      #       make generate_api_code
+      # - run:
+      #     name: Print docker and process states
+      #     command: |
+      #       docker ps
+      #       ps axww | grep watcher
+      #       ps axww | grep watcher_info
+      #       ps axww | grep child_chain
+      # - run: sh .circleci/status.sh
+      # - run:
+      #     name: Run specs
+      #     command: |
+      #       cd priv/cabbage
+      #       mix test
 
   publish_child_chain:
     machine:
