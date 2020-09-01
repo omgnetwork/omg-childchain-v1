@@ -629,7 +629,7 @@ jobs:
             make start-child_chain OVERRIDING_START=start_iex OVERRIDING_VARIABLES=./bin/variables_test_barebone
           background: true
           no_output_timeout: 2400
-      - run: curl -s -X GET http://localhost:9656/alarm.get
+      - run: sleep 240 && curl -s -X GET http://localhost:9656/alarm.get
 
   publish_child_chain:
     machine:
