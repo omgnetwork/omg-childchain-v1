@@ -12,8 +12,7 @@ defmodule OMG.MixProject do
       elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      deps: deps(),
-      test_coverage: [tool: ExCoveralls]
+      deps: deps()
     ]
   end
 

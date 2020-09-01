@@ -13,8 +13,7 @@ defmodule OMG.ChildChainRPC.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
-      deps: deps(),
-      test_coverage: [tool: ExCoveralls]
+      deps: deps()
     ]
   end
 
