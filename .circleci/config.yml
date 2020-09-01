@@ -59,8 +59,6 @@ commands:
     description: Builds docker images
     steps:
       - run: make docker-child_chain
-      #- run: make docker-watcher
-      #- run: make docker-watcher_info
 
   install_elixir:
     description: Installs elixir and checks if docker is healthy
@@ -631,39 +629,7 @@ jobs:
             make start-child_chain OVERRIDING_START=start_iex OVERRIDING_VARIABLES=./bin/variables_test_barebone
           background: true
           no_output_timeout: 2400
-      - run: sleep 120 
-      - run:
-          name: Start Watchers
-          environment:
-            CHILD_CHAIN_URL: http://172.17.0.1:9656
-          command: docker-compose up watcher watcher_info
-          background: true
-      - save_cache:
-          key: v2-dev-release-cache-{{ checksum "mix.lock" }}
-          paths:
-            - "deps_docker/"
-            - "deps/"
-            - "_build/dev/"
-            - "_build/dev/"
-      - run:
-          name: Install specs
-          command: |
-            make install-hex-rebar
-            cd priv/cabbage
-            mix deps.get
-            make install
-            make generate_api_code
-      - run:
-          name: Print docker and process states
-          command: |
-            docker ps
-            ps axww | grep child_chain
-      - run: sh .circleci/status.sh
-      - run:
-          name: Run specs
-          command: |
-            cd priv/cabbage
-            mix test
+      - run: sleep 360 && curl -s -X GET http://localhost:9656/alarm.get
 
   publish_child_chain:
     machine:
