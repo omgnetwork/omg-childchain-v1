@@ -13,7 +13,7 @@
 # limitations under the License.
 
 defmodule OMG.ChildChain.ReleaseTasks.SetFeeFeedAdapterOptsTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   alias OMG.ChildChain.Fees.FeedAdapter
   alias OMG.ChildChain.ReleaseTasks.SetFeeFeedAdapterOpts
 
