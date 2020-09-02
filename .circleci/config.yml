@@ -643,12 +643,12 @@ jobs:
           name: Send development deployment markers
           command: |
             curl -X POST -H 'Content-type: application/json' -d '{"title": "Starting Service", "text": "Starting with git SHA '"$CIRCLE_SHA1"'", "alert_type": "info" }' 'https://app.datadoghq.com/api/v1/events?api_key='"$DD_API_KEY"''
-            curl -X POST -H 'Content-type: application/json' -H 'Authorization: Bearer '"$SENTRY_TOKEN"'' -d '{"projects": ["elixir-omg"], "ref": "'"$CIRCLE_SHA1"'", "version": "Watcher-ChildChain-'"$CIRCLE_SHA1"'"}' 'https://sentry.io/api/0/organizations/omisego/releases/'
-            GH_URL="https://github.com/omisego/elixir-omg/tree/${CIRCLE_BRANCH}"
-            CIRCLE_URL="https://circleci.com/gh/omisego/elixir-omg/${CIRCLE_BUILD_NUM}"
+            curl -X POST -H 'Content-type: application/json' -H 'Authorization: Bearer '"$SENTRY_TOKEN"'' -d '{"projects": ["omgnetwork/grandfather"], "ref": "'"$CIRCLE_SHA1"'", "version": "ChildChain-'"$CIRCLE_SHA1"'"}' 'https://sentry.io/api/0/organizations/omisego/releases/'
+            GH_URL="https://github.com/omisego/omgnetwork/tree/${CIRCLE_BRANCH}"
+            CIRCLE_URL="https://circleci.com/gh/omgnetwork/grandfather/${CIRCLE_BUILD_NUM}"
             WORKFLOW_URL="https://circleci.com/workflow-run/${CIRCLE_WORKFLOW_ID}"
-            MESSAGE="omisego/elixir-omg branch ${CIRCLE_BRANCH} has deployed a new version"
-            RICH_MESSAGE="*omisego/elixir-omg* branch *${CIRCLE_BRANCH}* has been deployed"
+            MESSAGE="omgnetwork/grandfather branch ${CIRCLE_BRANCH} has deployed a new version"
+            RICH_MESSAGE="*omgnetwork/grandfather* branch *${CIRCLE_BRANCH}* has been deployed"
             curl -X POST -H 'Content-Type: application/json' --data "{ \
               \"attachments\": [ \
                 { \
