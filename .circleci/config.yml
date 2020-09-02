@@ -263,7 +263,7 @@ jobs:
       - run: mix sobelow --exit --skip --ignore Config.HTTPS -r apps/omg_status
       - run: mix sobelow --exit --skip --ignore Config.HTTPS -r apps/omg_utils
 
-  child_chain_coveralls_and_integration_tests:
+  child_chain_integration_tests:
     executor: builder_pg_geth
     environment:
       MIX_ENV: test
@@ -276,19 +276,12 @@ jobs:
           name: Compile
           command: mix compile
       - run:
-          name: Integration Tests & Coveralls Part Child Chain
+          name: Integration Tests Part Child Chain
           command: |
-            # Don't submit coverage report for forks, but let the build succeed
             export SHELL=/bin/bash
-            if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
-              mix coveralls.html --parallel --umbrella --include child_chain --exclude common --exclude test --trace
-            else
-              mix coveralls.circle --parallel --umbrella --include child_chain --exclude common --exclude test --trace ||
-                # if mix failed, then coveralls_report won't run, so signal done here and return original exit status
-                (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && exit $retval)
-            fi
+            mix test --include child_chain --exclude common --exclude test --trace
 
-  common_coveralls_and_integration_tests:
+  common_integration_tests:
     executor: builder_pg_geth
     environment:
       MIX_ENV: test
@@ -301,17 +294,10 @@ jobs:
           name: Compile
           command: mix compile
       - run:
-          name: Integration Tests & Coveralls Part Common
+          name: Integration Tests Part Common
           command: |
-            # Don't submit coverage report for forks, but let the build succeed
             export SHELL=/bin/bash
-            if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
-              mix coveralls.html --parallel --umbrella --include common --exclude child_chain --exclude test --trace
-            else
-              mix coveralls.circle --parallel --umbrella --include common --exclude child_chain --exclude test --trace ||
-                # if mix failed, then coveralls_report won't run, so signal done here and return original exit status
-                (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && exit $retval)
-            fi
+            mix test --include common --exclude child_chain --exclude test --trace
 
   test:
     executor: builder_pg
@@ -328,15 +314,8 @@ jobs:
       - run:
           name: Test
           command: |
-            # Don't submit coverage report for forks, but let the build succeed
             export SHELL=/bin/bash
-            if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
-              mix coveralls.html --parallel --umbrella --trace --exclude common --exclude child_chain
-            else
-              mix coveralls.circle --parallel --umbrella --trace --exclude common --exclude child_chain ||
-                # if mix failed, then coveralls_report won't run, so signal done here and return original exit status
-                (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && exit $retval)
-            fi
+            mix test --exclude common --exclude child_chain
 
   property_tests:
     executor: builder_pg_geth
@@ -657,16 +636,6 @@ jobs:
       - checkout
       - run: DEPLOY=child_chain sh .circleci/ci_deploy.sh
 
-  coveralls_report:
-    docker:
-      - image: omisegoimages/elixir-omg-circleci:v1.8-20190129-02
-        environment:
-          MIX_ENV: test
-    steps:
-      - run:
-          name: Tell coveralls.io build is done
-          command: curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done"
-
   notify_services:
     executor: builder_pg
     steps:
@@ -740,15 +709,10 @@ workflows:
             branches:
               only:
                 - master
-      - coveralls_report:
-          requires:
-            - child_chain_coveralls_and_integration_tests
-            - common_coveralls_and_integration_tests
-            - test
-      - child_chain_coveralls_and_integration_tests:
+      - child_chain_integration_tests:
           requires: [build]
           filters: *all_branches_and_tags
-      - common_coveralls_and_integration_tests:
+      - common_integration_tests:
           requires: [build]
           filters: *all_branches_and_tags
       - test_docker_compose_release:
@@ -785,8 +749,8 @@ workflows:
       - publish_child_chain:
           requires:
             [
-              child_chain_coveralls_and_integration_tests,
-              common_coveralls_and_integration_tests,
+              child_chain_integration_tests,
+              common_integration_tests,
               test,
               property_tests,
               dialyzer,
