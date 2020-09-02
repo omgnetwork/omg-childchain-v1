@@ -17,17 +17,6 @@ defmodule OMG.Utils.HttpRPC.ResponseTest do
 
   alias OMG.Utils.HttpRPC.Response
 
-  @cleaned_tx %{
-    blknum: nil,
-    txbytes: nil,
-    txhash: nil,
-    txindex: nil,
-    txtype: nil,
-    metadata: nil,
-    inserted_at: nil,
-    updated_at: nil
-  }
-
   describe "test sanitization without ecto preloaded" do
     test "cleaning response: simple value list works without ecto loaded" do
       value = [nil, 1, "01234", :atom, [], %{}, {:skip_hex_encode, "an arbitrary string"}]

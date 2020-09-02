@@ -3,23 +3,15 @@ defmodule OMG.Umbrella.MixProject do
 
   def project() do
     [
-      # name the ap for the sake of `mix coveralls --umbrella`
-      # see https://github.com/parroty/excoveralls/issues/23#issuecomment-339379061
       apps_path: "apps",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.html": :test,
-        "coveralls.circle": :test,
         dialyzer: :test
       ],
       build_path: "_build" <> docker(),
       deps_path: "deps" <> docker(),
       dialyzer: dialyzer(),
-      test_coverage: [tool: ExCoveralls],
-      # gets all apps test folders for the sake of `mix coveralls --umbrella`
       test_paths: test_paths(),
       aliases: aliases(),
       # Docs
@@ -75,9 +67,6 @@ defmodule OMG.Umbrella.MixProject do
       {:mix_audit, "~> 0.1", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.3", only: [:dev, :test], runtime: false},
-      # https://github.com/xadhoom/excoveralls.git `52c6c8e5d7fe9abb814e5e3e546c863b9b2b41b7` rebased on `master`
-      # more or less around v0.11.1
-      {:excoveralls, "~> 0.12.3"},
       {:licensir, "~> 0.2.0", only: :dev, runtime: false},
       {
         :ex_unit_fixtures,
@@ -92,11 +81,6 @@ defmodule OMG.Umbrella.MixProject do
   defp aliases() do
     [
       test: ["test --no-start"],
-      coveralls: ["coveralls --no-start"],
-      "coveralls.html": ["coveralls.html --no-start"],
-      "coveralls.detail": ["coveralls.detail --no-start"],
-      "coveralls.post": ["coveralls.post --no-start"],
-      "coveralls.circle": ["coveralls.circle --no-start"],
       "ecto.setup": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "ecto.setup"]
     ]
