@@ -277,7 +277,9 @@ jobs:
           command: mix compile
       - run:
           name: Integration Tests Part Child Chain
-          command: mix test --include child_chain --exclude common --exclude test --trace
+          command: |
+            export SHELL=/bin/bash
+            mix test --include child_chain --exclude common --exclude test --trace
 
   common_integration_tests:
     executor: builder_pg_geth
@@ -293,7 +295,9 @@ jobs:
           command: mix compile
       - run:
           name: Integration Tests Part Common
-          command: mix test --include common --exclude child_chain --exclude test --trace
+          command: |
+            export SHELL=/bin/bash
+            mix test --include common --exclude child_chain --exclude test --trace
 
   test:
     executor: builder_pg
@@ -309,7 +313,9 @@ jobs:
           command: mix compile
       - run:
           name: Test
-          command: mix test --exclude common --exclude child_chain
+          command: |
+            export SHELL=/bin/bash
+            mix test --exclude common --exclude child_chain
 
   property_tests:
     executor: builder_pg_geth
