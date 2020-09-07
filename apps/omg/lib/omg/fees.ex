@@ -81,7 +81,9 @@ defmodule OMG.Fees do
   # If :ignore_fees is given, we don't require any surplus of tokens. If surplus exists, it will be collected.
   def check_if_covered(_, :ignore_fees), do: :ok
   # added clause that allows to have empty fee specs for mix based watcher tests
-  def check_if_covered(_, %{}), do: :ok
+  def check_if_covered(_, accepted_fees) when map_size(accepted_fees) == 0 do
+    :ok
+  end
 
   # Otherwise we remove all non positive tokens from the map and process it
   def check_if_covered(implicit_paid_fee_by_currency, accepted_fees) do
