@@ -479,7 +479,8 @@ jobs:
           command: |
             cd priv/perf
             make log-services
-      - install_elixir_and_check_docker_status
+      - install_elixir
+      - run: sh .circleci/status.sh
       - run:
           name: Run load test
           command: |
