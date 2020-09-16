@@ -877,8 +877,8 @@ defmodule OMG.State.CoreTest do
     )
     |> fail?(:input_utxo_ahead_of_state)
 
-    tx =
-      TestHelper.create_recovered([{1, 0, 0, alice}, {future_deposit_blknum, 0, 0, alice}], @eth, [{bob, 5}, {alice, 4}])
+    inputs = [{1, 0, 0, alice}, {future_deposit_blknum, 0, 0, alice}]
+    tx = TestHelper.create_recovered(inputs, @eth, [{bob, 5}, {alice, 4}])
 
     state
     |> Core.exec(tx, @fee)
