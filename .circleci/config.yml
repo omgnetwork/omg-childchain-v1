@@ -766,6 +766,9 @@ workflows:
       - publish_child_chain:
           requires:
             [
+              test_docker_compose_release,
+              test_barebone_release,
+              test_docker_compose_reorg,
               child_chain_integration_tests,
               common_integration_tests,
               test,
