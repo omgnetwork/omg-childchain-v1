@@ -38,26 +38,27 @@ defmodule OMG.State.Transaction.Validator do
   """
   @spec can_process_tx(state :: Core.t(), tx :: Transaction.Recovered.t(), fees :: Fees.optional_fee_t()) ::
           {:ok, map()} | {:ok, map()} | {{:error, can_process_tx_error()}, Core.t()}
-  def can_process_tx(%Core{} = state, %Transaction.Recovered{} = tx, fees) do
-    with :ok <- validate_block_size(state), do: dispatch_validation(state, tx, fees)
+  def can_process_tx(state, tx, fees) do
+    case validate_block_size(state) do
+      :ok -> dispatch_validation(state, tx, fees)
+      other -> other
+    end
   end
 
-  defp validate_block_size(%Core{tx_index: number_of_transactions_in_block, fees_paid: fees_paid} = state) do
-    fee_transactions_count = Enum.count(fees_paid)
+  defp validate_block_size(state) do
+    fee_transactions_count = Enum.count(state.fees_paid)
 
-    case number_of_transactions_in_block + fee_transactions_count > @available_block_size do
+    case state.tx_index + fee_transactions_count > @available_block_size do
       true -> {{:error, :too_many_transactions_in_block}, state}
       false -> :ok
     end
   end
 
-  defp dispatch_validation(state, %Transaction.Recovered{signed_tx: %{raw_tx: %Transaction.Payment{}}} = tx, fees),
-    do: Validator.Payment.can_apply_tx(state, tx, fees)
+  defp dispatch_validation(state, %Transaction.Recovered{signed_tx: %{raw_tx: %Transaction.Payment{}}} = tx, fees) do
+    Validator.Payment.can_apply_tx(state, tx, fees)
+  end
 
-  defp dispatch_validation(
-         state,
-         %Transaction.Recovered{signed_tx: %{raw_tx: %Transaction.Fee{}}} = tx,
-         _fees
-       ),
-       do: Validator.FeeClaim.can_claim_fees(state, tx)
+  defp dispatch_validation(state, %Transaction.Recovered{signed_tx: %{raw_tx: %Transaction.Fee{}}} = tx, _fees) do
+    Validator.FeeClaim.can_claim_fees(state, tx)
+  end
 end
