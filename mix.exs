@@ -38,6 +38,7 @@ defmodule OMG.Umbrella.MixProject do
             {OMG.Status.ReleaseTasks.SetApplication, [release: :child_chain, current_version: current_version()]},
             {OMG.Status.ReleaseTasks.SetLogger, []},
             {OMG.ReleaseTasks.SetEthereumEventsCheckInterval, []},
+            {OMG.Eth.ReleaseTasks.SetTenderlyFallbackCallDataProvider, []},
             {OMG.Eth.ReleaseTasks.SetEthereumEventsCheckInterval, []},
             {OMG.Eth.ReleaseTasks.SetEthereumStalledSyncThreshold, []},
             {OMG.ChildChain.ReleaseTasks.SetBlockSubmitMaxGasPrice, []},
