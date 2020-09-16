@@ -620,7 +620,7 @@ jobs:
           name: Run Child Chain
           command: |
             set -e
-            mix deps.get 
+            mix deps.get
             make start-child_chain OVERRIDING_START=start_iex OVERRIDING_VARIABLES=./bin/variables_test_barebone
           background: true
           no_output_timeout: 2400
@@ -636,21 +636,27 @@ jobs:
       - run: make docker-child_chain CHILD_CHAIN_IMAGE_NAME=$CHILD_CHAIN_IMAGE_NAME
       - run: IMAGE_NAME=$CHILD_CHAIN_IMAGE_NAME sh .circleci/ci_publish.sh
 
-  increase_chart_version_childchain:
+  increase_chart_version_master:
     docker:
       - image: cimg/base:2020.01
     environment:
       CHART_NAME: childchain
       HELM_CHART_REPO: helm-development
+      UPDATE_DEV: true
     steps:
       - checkout
-      - run: sh .circleci/ci_increase_chart_version.sh
+      - run: APP_VERSION="$(echo "$CIRCLE_SHA1" | head -c 7)" sh .circleci/ci_increase_chart_version.sh
 
-  deploy_child_chain:
-    executor: deployer
+  increase_chart_version_release:
+    docker:
+      - image: cimg/base:2020.01
+    environment:
+      CHART_NAME: childchain
+      HELM_CHART_REPO: helm-development
+      UPDATE_DEV: false
     steps:
       - checkout
-      - run: DEPLOY=child_chain sh .circleci/ci_deploy.sh
+      - run: APP_VERSION="${CIRCLE_TAG#*v}" sh .circleci/ci_increase_chart_version.sh
 
   notify_services:
     executor: builder_pg
@@ -718,7 +724,7 @@ workflows:
       - test_barebone_release:
           filters: *all_branches_and_tags
       - notify_services:
-          requires: [deploy_child_chain]
+          requires: [increase_chart_version_master]
           filters:
             branches:
               only:
@@ -778,15 +784,15 @@ workflows:
             tags:
               only:
                 - /.+/
-      # Release deploy to development in case of master branch.
-      - deploy_child_chain:
+      # Increase chart version for master, this will end up trigger deployment on dev
+      - increase_chart_version_master:
           requires: [publish_child_chain]
           filters:
             branches:
               only:
                 - master
       # Increase chart version for new release
-      - increase_chart_version_childchain:
+      - increase_chart_version_release:
           requires: [publish_child_chain]
           filters: &only_release_tag
             branches:
