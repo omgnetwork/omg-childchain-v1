@@ -22,6 +22,8 @@ defmodule OMG.DB.ReleaseTasks.InitKeyValueDB do
 
   def run() do
     _ = on_load()
+    adapter = Process.get(:system_adapter, System)
+    _ = Process.put(:system_adapter, adapter)
     path = Application.get_env(:omg_db, :path)
     process(path)
   end

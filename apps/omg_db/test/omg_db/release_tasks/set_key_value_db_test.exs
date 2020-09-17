@@ -20,35 +20,44 @@ defmodule OMG.DB.ReleaseTasks.SetKeyValueDBTest do
   @app :omg_db
 
   setup do
-    _ = Application.ensure_all_started(:logger)
-
-    on_exit(fn ->
-      :ok = System.delete_env("DB_PATH")
-    end)
-
+    {:ok, pid} = __MODULE__.System.start_link([])
+    nil = Process.put(__MODULE__.System, pid)
     :ok
   end
 
   test "if environment variables get applied in the configuration" do
     test_path = "/tmp/YOLO/"
-    release = :watcher_info
-    :ok = System.put_env("DB_PATH", test_path)
+    release = :child_chain
+    :ok = __MODULE__.System.put_env("DB_PATH", test_path)
 
     capture_log(fn ->
-      config = SetKeyValueDB.load([], release: release)
+      config = SetKeyValueDB.load([], release: release, system_adapter: __MODULE__.System)
       path = config |> Keyword.fetch!(@app) |> Keyword.fetch!(:path)
       assert path == test_path <> "#{release}"
     end)
   end
 
   test "if default configuration is used when there's no environment variables" do
-    :ok = System.delete_env("DB_PATH")
-
     capture_log(fn ->
-      config = SetKeyValueDB.load([], release: :watcher_info)
+      config = SetKeyValueDB.load([], release: :child_chain, system_adapter: __MODULE__.System)
       path = config |> Keyword.fetch!(@app) |> Keyword.fetch!(:path)
 
-      assert path == Path.join([System.get_env("HOME"), ".omg/data"]) <> "/watcher_info"
+      assert path == Path.join([System.get_env("HOME"), ".omg/data"]) <> "/child_chain"
     end)
+  end
+
+  defmodule System do
+    def start_link(args), do: GenServer.start_link(__MODULE__, args, [])
+    def get_env(key), do: __MODULE__ |> Process.get() |> GenServer.call({:get_env, key})
+    def put_env(key, value), do: __MODULE__ |> Process.get() |> GenServer.call({:put_env, key, value})
+    def init(_), do: {:ok, %{}}
+
+    def handle_call({:get_env, key}, _, state) do
+      {:reply, state[key], state}
+    end
+
+    def handle_call({:put_env, key, value}, _, state) do
+      {:reply, :ok, Map.put(state, key, value)}
+    end
   end
 end
