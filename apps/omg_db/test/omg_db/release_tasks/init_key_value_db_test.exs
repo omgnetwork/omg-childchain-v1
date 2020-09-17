@@ -30,11 +30,17 @@ defmodule OMG.DB.ReleaseTasks.InitKeyValueDBTest do
     :ok
   end
 
+  setup do
+    {:ok, pid} = __MODULE__.System.start_link([])
+    nil = Process.put(__MODULE__.System, pid)
+    :ok
+  end
+
   test "init works and DB starts" do
     {:ok, dir} = Briefly.create(directory: true)
-    :ok = System.put_env("DB_PATH", dir)
+    :ok = __MODULE__.System.put_env("DB_PATH", dir)
 
-    _ = SetKeyValueDB.load([], release: :child_chain)
+    _ = SetKeyValueDB.load([], release: :child_chain, system_adapter: __MODULE__.System)
 
     :ok = InitKeyValueDB.run()
 
@@ -42,28 +48,27 @@ defmodule OMG.DB.ReleaseTasks.InitKeyValueDBTest do
     [true, true, true] = Enum.map(@apps, fn app -> not Enum.member?(started_apps, app) end)
     {:ok, _} = Application.ensure_all_started(:omg_db)
     :ok = Application.stop(:omg_db)
-    :ok = System.delete_env("DB_PATH")
+
     _ = File.rm_rf!(dir)
   end
 
   test "can't init non empty dir" do
     {:ok, dir} = Briefly.create(directory: true)
-    :ok = System.put_env("DB_PATH", dir)
+    :ok = __MODULE__.System.put_env("DB_PATH", dir)
 
-    _ = SetKeyValueDB.load([], release: :watcher)
+    _ = SetKeyValueDB.load([], release: :child_chain, system_adapter: __MODULE__.System)
     _ = InitKeyValueDB.run()
 
     {:error, _} = InitKeyValueDB.run()
-    :ok = System.delete_env("DB_PATH")
     _ = File.rm_rf!(dir)
   end
 
   test "if init isn't called, DB doesn't start" do
     _ = Application.stop(:omg_db)
     {:ok, dir} = Briefly.create(directory: true)
-    :ok = System.put_env("DB_PATH", dir)
+    :ok = __MODULE__.System.put_env("DB_PATH", dir)
 
-    _ = SetKeyValueDB.load([], release: :child_chain)
+    _ = SetKeyValueDB.load([], release: :child_chain, system_adapter: __MODULE__.System)
 
     try do
       {:ok, _} = Application.ensure_all_started(:omg_db)
@@ -76,7 +81,20 @@ defmodule OMG.DB.ReleaseTasks.InitKeyValueDBTest do
           {OMG.DB.Application, :start, [:normal, []]}}}}} ->
         :ok
     end
+  end
 
-    :ok = System.delete_env("DB_PATH")
+  defmodule System do
+    def start_link(args), do: GenServer.start_link(__MODULE__, args, [])
+    def get_env(key), do: __MODULE__ |> Process.get() |> GenServer.call({:get_env, key})
+    def put_env(key, value), do: __MODULE__ |> Process.get() |> GenServer.call({:put_env, key, value})
+    def init(_), do: {:ok, %{}}
+
+    def handle_call({:get_env, key}, _, state) do
+      {:reply, state[key], state}
+    end
+
+    def handle_call({:put_env, key, value}, _, state) do
+      {:reply, :ok, Map.put(state, key, value)}
+    end
   end
 end
