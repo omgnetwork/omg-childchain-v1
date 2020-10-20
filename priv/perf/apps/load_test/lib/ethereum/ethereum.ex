@@ -136,7 +136,8 @@ defmodule LoadTest.Ethereum do
   defp get_external_data(address, signature, params) do
     data = signature |> ABI.encode(params) |> Encoding.to_hex()
 
-    {:ok, data} = Ethereumex.HttpClient.eth_call(%{to: address, data: data})
+    from = Application.fetch_env!(:omg_eth, :eth_call_from_address)
+    {:ok, data} = Ethereumex.HttpClient.eth_call(%{from: from, to: address, data: data})
 
     Abi.decode_function(data, signature)
   end
