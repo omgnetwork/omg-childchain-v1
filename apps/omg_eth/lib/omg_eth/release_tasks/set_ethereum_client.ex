@@ -29,13 +29,12 @@ defmodule OMG.Eth.ReleaseTasks.SetEthereumClient do
     _ = on_load()
     rpc_url = get_ethereum_rpc_url()
     rpc_client_type = get_rpc_client_type()
-    eth_call_from_address = get_eth_call_from_address()
     # we need to get this imidiatelly in effect because we use ethereumex in SetContract
     Application.put_env(:ethereumex, :url, rpc_url, persistent: true)
 
     Config.Reader.merge(config,
       ethereumex: [url: rpc_url],
-      omg_eth: [eth_node: rpc_client_type, eth_call_from_address: eth_call_from_address]
+      omg_eth: [eth_node: rpc_client_type]
     )
   end
 
@@ -53,15 +52,6 @@ defmodule OMG.Eth.ReleaseTasks.SetEthereumClient do
     rpc_client_type
   end
 
-  defp get_eth_call_from_address() do
-    eth_call_from_address =
-      validate_address(get_env("ETH_CALL_FROM_ADDRESS"), Application.get_env(@app, :eth_call_from_address))
-
-    _ = Logger.info("CONFIGURATION: App: #{@app} Key: ETH_CALL_FROM_ADDRESS Value: #{inspect(eth_call_from_address)}.")
-
-    eth_call_from_address
-  end
-
   defp validate_rpc_client_type(value, _default) when is_binary(value),
     do: to_rpc_client_type(String.upcase(value))
 
@@ -75,16 +65,6 @@ defmodule OMG.Eth.ReleaseTasks.SetEthereumClient do
 
   defp validate_string(value, _default) when is_binary(value), do: value
   defp validate_string(_, default), do: default
-
-  defp validate_address("0x" <> hex = address, _default) do
-    case Base.decode16(hex, case: :mixed) do
-      {:ok, <<_::binary-size(20)>>} -> address
-      _ -> exit("Eth call from address must be set.")
-    end
-  end
-
-  defp validate_address(_, nil), do: exit("Eth call from address must be set.")
-  defp validate_address(_, default), do: default
 
   defp get_env(key), do: System.get_env(key)
 

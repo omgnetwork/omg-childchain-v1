@@ -99,8 +99,7 @@ config :omg_eth,
   min_exit_period_seconds: 22,
   ethereum_block_time_seconds: 1,
   eth_node: :geth,
-  run_test_eth_dev_node: true,
-  eth_call_from_address: "0xb60e8dd61c5d32be8058bb8eb970870f07233155"
+  run_test_eth_dev_node: true
 
 config :omg_status,
   metrics: false,

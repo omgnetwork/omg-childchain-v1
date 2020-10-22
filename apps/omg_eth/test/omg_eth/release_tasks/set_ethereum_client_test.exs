@@ -21,26 +21,20 @@ defmodule OMG.Eth.ReleaseTasks.SetEthereumClientTest do
   test "if defaults are used when env vars are not set" do
     default_url = Application.get_env(:ethereumex, :url)
     default_eth_node = Application.get_env(@app, :eth_node)
-    default_eth_call_from_address = Application.get_env(@app, :eth_call_from_address)
     config = SetEthereumClient.load([], [])
     eth_node = config |> Keyword.fetch!(@app) |> Keyword.fetch!(:eth_node)
-    eth_call_from_address = config |> Keyword.fetch!(@app) |> Keyword.fetch!(:eth_call_from_address)
     url = config |> Keyword.fetch!(:ethereumex) |> Keyword.fetch!(:url)
     assert url == default_url
     assert eth_node == default_eth_node
-    assert eth_call_from_address == default_eth_call_from_address
   end
 
   test "if values are used when env vars set" do
     :ok = System.put_env("ETHEREUM_RPC_URL", "url")
     :ok = System.put_env("ETH_NODE", "geth")
-    :ok = System.put_env("ETH_CALL_FROM_ADDRESS", "0x0000000000000000000000000000000000000001")
     config = SetEthereumClient.load([], [])
     eth_node = config |> Keyword.fetch!(@app) |> Keyword.fetch!(:eth_node)
-    eth_call_from_address = config |> Keyword.fetch!(@app) |> Keyword.fetch!(:eth_call_from_address)
     url = config |> Keyword.fetch!(:ethereumex) |> Keyword.fetch!(:url)
     assert eth_node == :geth
-    assert eth_call_from_address == "0x0000000000000000000000000000000000000001"
     assert url == "url"
 
     :ok = System.put_env("ETH_NODE", "parity")
@@ -59,7 +53,6 @@ defmodule OMG.Eth.ReleaseTasks.SetEthereumClientTest do
     # cleanup
     :ok = System.delete_env("ETHEREUM_RPC_URL")
     :ok = System.delete_env("ETH_NODE")
-    :ok = System.delete_env("ETH_CALL_FROM_ADDRESS")
   end
 
   test "if faulty eth node exits" do
@@ -67,11 +60,5 @@ defmodule OMG.Eth.ReleaseTasks.SetEthereumClientTest do
 
     assert catch_exit(SetEthereumClient.load([], []))
     :ok = System.delete_env("ETH_NODE")
-  end
-
-  test "exits when call from address is invalid" do
-    :ok = System.put_env("ETH_CALL_FROM_ADDRESS", "0x1")
-    assert catch_exit(SetEthereumClient.load([], []))
-    :ok = System.delete_env("ETH_CALL_FROM_ADDRESS")
   end
 end

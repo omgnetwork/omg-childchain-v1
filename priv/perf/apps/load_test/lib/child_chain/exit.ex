@@ -82,11 +82,9 @@ defmodule LoadTest.ChildChain.Exit do
         [@vault_id, @token]
       )
 
-    from = Application.fetch_env!(:omg_eth, :eth_call_from_address)
-
     {:ok, receipt_enc} =
       Ethereumex.HttpClient.eth_call(%{
-        from: from,
+        from: Application.fetch_env!(:load_test, :eth_call_from_address),
         to: Application.fetch_env!(:load_test, :contract_address_plasma_framework),
         data: Encoding.to_hex(data)
       })

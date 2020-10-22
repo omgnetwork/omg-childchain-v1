@@ -18,9 +18,8 @@ defmodule OMG.Eth.RootChain.Rpc do
   require Logger
   alias OMG.Eth.Encoding
 
-  def call_contract(client \\ Ethereumex.HttpClient, contract, signature, args) do
+  def call_contract(client \\ Ethereumex.HttpClient, contract, signature, args, from) do
     data = signature |> ABI.encode(args) |> Encoding.to_hex()
-    from = Application.fetch_env!(:omg_eth, :eth_call_from_address)
     client.eth_call(%{from: from, to: contract, data: data})
   end
 

@@ -72,7 +72,7 @@ defmodule OMG.Eth.Fixtures do
 
   defp call_contract(contract, signature, args, return_types) do
     data = ABI.encode(signature, args)
-    from = Application.fetch_env!(:omg_eth, :eth_call_from_address)
+    from = Configuration.authority_address()
     {:ok, return} = Ethereumex.HttpClient.eth_call(%{from: from, to: contract, data: Encoding.to_hex(data)})
     decode_answer(return, return_types)
   end

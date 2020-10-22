@@ -19,6 +19,7 @@ defmodule Support.Conformance.MerkleProofs do
 
   import ExUnit.Assertions, only: [assert: 1]
 
+  alias OMG.Eth.Configuration
   alias OMG.Eth.Encoding
 
   @doc """
@@ -58,10 +59,12 @@ defmodule Support.Conformance.MerkleProofs do
   defp call_contract(contract, signature, args, return_types) do
     data = ABI.encode(signature, args)
 
-    from = Application.fetch_env!(:omg_eth, :eth_call_from_address)
-
     {:ok, return} =
-      Ethereumex.HttpClient.eth_call(%{from: from, to: Encoding.to_hex(contract), data: Encoding.to_hex(data)})
+      Ethereumex.HttpClient.eth_call(%{
+        from: Configuration.authority_address(),
+        to: Encoding.to_hex(contract),
+        data: Encoding.to_hex(data)
+      })
 
     decode_answer(return, return_types)
   end
