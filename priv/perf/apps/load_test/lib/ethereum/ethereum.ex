@@ -138,7 +138,7 @@ defmodule LoadTest.Ethereum do
 
     {:ok, data} =
       Ethereumex.HttpClient.eth_call(%{
-        from: Application.fetch_env!(:load_test, :eth_call_from_address),
+        from: address,
         to: address,
         data: data
       })
