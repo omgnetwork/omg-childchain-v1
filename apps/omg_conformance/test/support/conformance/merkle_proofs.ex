@@ -61,7 +61,7 @@ defmodule Support.Conformance.MerkleProofs do
 
     {:ok, return} =
       Ethereumex.HttpClient.eth_call(%{
-        from: Configuration.authority_address(),
+        from: Encoding.to_hex(contract),
         to: Encoding.to_hex(contract),
         data: Encoding.to_hex(data)
       })
