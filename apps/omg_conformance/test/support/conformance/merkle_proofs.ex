@@ -19,7 +19,6 @@ defmodule Support.Conformance.MerkleProofs do
 
   import ExUnit.Assertions, only: [assert: 1]
 
-  alias OMG.Eth.Configuration
   alias OMG.Eth.Encoding
 
   @doc """
