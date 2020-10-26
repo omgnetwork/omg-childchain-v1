@@ -28,7 +28,7 @@ config :load_test,
   fee_amount: 1,
   deposit_finality_margin: 10,
   gas_price: 2_000_000_000,
-  eth_call_from_address: "0x0000000000000000000000000000000000000001"
+  
 
 config :ex_plasma,
   eip_712_domain: [
