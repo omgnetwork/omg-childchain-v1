@@ -34,22 +34,22 @@ defmodule OMG.Eth.ReleaseTasks.SetEthereumClientTest do
     config = SetEthereumClient.load([], [])
     eth_node = config |> Keyword.fetch!(@app) |> Keyword.fetch!(:eth_node)
     url = config |> Keyword.fetch!(:ethereumex) |> Keyword.fetch!(:url)
-    assert url == "url"
     assert eth_node == :geth
+    assert url == "url"
 
     :ok = System.put_env("ETH_NODE", "parity")
     config = SetEthereumClient.load([], [])
     eth_node = config |> Keyword.fetch!(@app) |> Keyword.fetch!(:eth_node)
     url = config |> Keyword.fetch!(:ethereumex) |> Keyword.fetch!(:url)
-    assert url == "url"
     assert eth_node == :parity
+    assert url == "url"
 
     :ok = System.put_env("ETH_NODE", "infura")
     config = SetEthereumClient.load([], [])
     eth_node = config |> Keyword.fetch!(@app) |> Keyword.fetch!(:eth_node)
     url = config |> Keyword.fetch!(:ethereumex) |> Keyword.fetch!(:url)
-    assert url == "url"
     assert eth_node == :infura
+    assert url == "url"
     # cleanup
     :ok = System.delete_env("ETHEREUM_RPC_URL")
     :ok = System.delete_env("ETH_NODE")

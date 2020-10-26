@@ -98,7 +98,9 @@ defmodule OMG.Eth.ReleaseTasks.SetContract do
     min_exit_period_seconds = get_min_exit_period(plasma_framework, rpc_api)
 
     payment_exit_game =
-      plasma_framework |> exit_game_contract_address(ExPlasma.payment_v1(), rpc_api) |> Encoding.to_hex()
+      plasma_framework
+      |> exit_game_contract_address(ExPlasma.payment_v1(), rpc_api)
+      |> Encoding.to_hex()
 
     eth_vault = plasma_framework |> get_vault(@ether_vault_id, rpc_api) |> Encoding.to_hex()
     erc20_vault = plasma_framework |> get_vault(@erc20_vault_id, rpc_api) |> Encoding.to_hex()
