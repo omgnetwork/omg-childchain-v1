@@ -1,8 +1,46 @@
 # Changelog
 
-## [Unreleased](https://github.com/omgnetwork/elixir-omg/tree/HEAD)
+## [v1.0.5](https://github.com/omgnetwork/elixir-omg/tree/v1.0.5)
 
-[Full Changelog](https://github.com/omgnetwork/elixir-omg/compare/v1.0.3...HEAD)
+[Full Changelog](https://github.com/omgnetwork/elixir-omg/compare/v1.0.4...v1.0.5)
+
+### Enhancements
+
+- feat: comply with new Infura API [\#1754](https://github.com/omgnetwork/elixir-omg/pull/1754) ([pgebal](https://github.com/pgebal))
+- deposits performance tests bot [\#1745](https://github.com/omgnetwork/elixir-omg/pull/1745) ([ayrat555](https://github.com/ayrat555))
+- feat: handle in-flight exits deletions [\#1701](https://github.com/omgnetwork/elixir-omg/pull/1701) ([pgebal](https://github.com/pgebal))
+
+### Bug fixes
+
+- fix: recheck PR label on synchronize and reopen [\#1748](https://github.com/omgnetwork/elixir-omg/pull/1748) ([unnawut](https://github.com/unnawut))
+- fix: handle metrics for in flight exit deleted processor [\#1742](https://github.com/omgnetwork/elixir-omg/pull/1742) ([pgebal](https://github.com/pgebal))
+- revert: reverts ife deletion commits [\#1725](https://github.com/omgnetwork/elixir-omg/pull/1725) ([pgebal](https://github.com/pgebal))
+- fix: set :last\_ife\_exit\_deleted\_eth\_height on deplyment if it's not set yet [\#1720](https://github.com/omgnetwork/elixir-omg/pull/1720) ([pgebal](https://github.com/pgebal))
+- fix: fix in-flight exit deleted bug and add tests [\#1714](https://github.com/omgnetwork/elixir-omg/pull/1714) ([pgebal](https://github.com/pgebal))
+- fix: block submission stall monitor should ignore block\_submitting that are already mined [\#1703](https://github.com/omgnetwork/elixir-omg/pull/1703) ([unnawut](https://github.com/unnawut))
+
+### Chores
+
+- Publish the perf project [\#1753](https://github.com/omgnetwork/elixir-omg/pull/1753) ([ayrat555](https://github.com/ayrat555))
+- chore: bump version to 1.0.4 [\#1751](https://github.com/omgnetwork/elixir-omg/pull/1751) ([boolafish](https://github.com/boolafish))
+- Chore: parallelize tests by tags [\#1744](https://github.com/omgnetwork/elixir-omg/pull/1744) ([ayrat555](https://github.com/ayrat555))
+- Chore: use exexec from upstream [\#1743](https://github.com/omgnetwork/elixir-omg/pull/1743) ([ayrat555](https://github.com/ayrat555))
+- Chore: try to fix flaky reorg tests [\#1739](https://github.com/omgnetwork/elixir-omg/pull/1739) ([ayrat555](https://github.com/ayrat555))
+- move dev env deployment job to helm repo [\#1738](https://github.com/omgnetwork/elixir-omg/pull/1738) ([boolafish](https://github.com/boolafish))
+- Inomurko/remove child chain [\#1737](https://github.com/omgnetwork/elixir-omg/pull/1737) ([InoMurko](https://github.com/InoMurko))
+- Kevsul/standard exit perf test [\#1732](https://github.com/omgnetwork/elixir-omg/pull/1732) ([kevsul](https://github.com/kevsul))
+- update change log v1.0.4 [\#1731](https://github.com/omgnetwork/elixir-omg/pull/1731) ([jarindr](https://github.com/jarindr))
+- chore: add test for 64\_000 txs block hash [\#1729](https://github.com/omgnetwork/elixir-omg/pull/1729) ([ayrat555](https://github.com/ayrat555))
+- Allow to run docker-compose without feefeed docker [\#1726](https://github.com/omgnetwork/elixir-omg/pull/1726) ([boolafish](https://github.com/boolafish))
+- rm mix based chch part 1 [\#1716](https://github.com/omgnetwork/elixir-omg/pull/1716) ([InoMurko](https://github.com/InoMurko))
+- feat: reintroduce automated changelog [\#1708](https://github.com/omgnetwork/elixir-omg/pull/1708) ([unnawut](https://github.com/unnawut))
+- add feefeed docker to elixir-omg setup [\#1700](https://github.com/omgnetwork/elixir-omg/pull/1700) ([boolafish](https://github.com/boolafish))
+- move omg\_performance json rpc tests to perf project [\#1691](https://github.com/omgnetwork/elixir-omg/pull/1691) ([ayrat555](https://github.com/ayrat555))
+- feat: transaction.create optimisation [\#1683](https://github.com/omgnetwork/elixir-omg/pull/1683) ([okalouti](https://github.com/okalouti))
+
+## [v1.0.4](https://github.com/omgnetwork/elixir-omg/tree/v1.0.4) (2020-09-03)
+
+[Full Changelog](https://github.com/omgnetwork/elixir-omg/compare/v1.0.4-pre.1...v1.0.4)
 
 ### API changes
 
@@ -24,17 +62,17 @@
 
 ### Chores
 
-- auto trigger chart version bump [\#1695](https://github.com/omgnetwork/elixir-omg/pull/1695) ([boolafish](https://github.com/boolafish))
+- bump version 1.0.4 [\#1722](https://github.com/omgnetwork/elixir-omg/pull/1722) ([jarindr](https://github.com/jarindr))
 - bump phoenix [\#1680](https://github.com/omgnetwork/elixir-omg/pull/1680) ([InoMurko](https://github.com/InoMurko))
 - chore: increase timeouts for childchain healthchecks [\#1671](https://github.com/omgnetwork/elixir-omg/pull/1671) ([ayrat555](https://github.com/ayrat555))
 - fix integration tests [\#1654](https://github.com/omgnetwork/elixir-omg/pull/1654) ([ayrat555](https://github.com/ayrat555))
 - feat: pin elixir and erlang versions for asdf [\#1648](https://github.com/omgnetwork/elixir-omg/pull/1648) ([unnawut](https://github.com/unnawut))
 - chore: change log and version file change for v1.0.3 \(\#1638\) [\#1639](https://github.com/omgnetwork/elixir-omg/pull/1639) ([boolafish](https://github.com/boolafish))
 - use cabbage tests from a separate repo [\#1636](https://github.com/omgnetwork/elixir-omg/pull/1636) ([ayrat555](https://github.com/ayrat555))
-- set OMG.State GenServer timeout to 10s [\#1517](https://github.com/omgnetwork/elixir-omg/pull/1517) ([achiurizo](https://github.com/achiurizo))
 
 ### Documentation updates
 
+- v.1.0.4 change log [\#1719](https://github.com/omgnetwork/elixir-omg/pull/1719) ([jarindr](https://github.com/jarindr))
 - docs: extend description of running cabbage tests [\#1658](https://github.com/omgnetwork/elixir-omg/pull/1658) ([pnowosie](https://github.com/pnowosie))
 
 ## [v1.0.3](https://github.com/omgnetwork/elixir-omg/tree/v1.0.3) (2020-07-09)
@@ -86,7 +124,6 @@
 
 - async stream + timeout [\#1593](https://github.com/omgnetwork/elixir-omg/pull/1593) ([InoMurko](https://github.com/InoMurko))
 - fix: error attempting to log txhash in binary [\#1532](https://github.com/omgnetwork/elixir-omg/pull/1532) ([unnawut](https://github.com/unnawut))
-- use fixed version of ex\_abi [\#1519](https://github.com/omgnetwork/elixir-omg/pull/1519) ([ayrat555](https://github.com/ayrat555))
 
 ### Chores
 
@@ -103,7 +140,7 @@
 
 ## [v1.0.1](https://github.com/omgnetwork/elixir-omg/tree/v1.0.1) (2020-06-18)
 
-[Full Changelog](https://github.com/omgnetwork/elixir-omg/compare/v1.0.1-pre.0...v1.0.1)
+[Full Changelog](https://github.com/omgnetwork/elixir-omg/compare/v1.0.0-pre.2...v1.0.1)
 
 ### Chores
 
@@ -111,7 +148,7 @@
 
 ## [v1.0.0](https://github.com/omgnetwork/elixir-omg/tree/v1.0.0) (2020-06-12)
 
-[Full Changelog](https://github.com/omgnetwork/elixir-omg/compare/v1.0.0-pre.2...v1.0.0)
+[Full Changelog](https://github.com/omgnetwork/elixir-omg/compare/v1.0.0-pre.1...v1.0.0)
 
 ### API changes
 
@@ -127,7 +164,6 @@
 
 ### Enhancements
 
-- Inomurko/reorg block getter [\#1554](https://github.com/omgnetwork/elixir-omg/pull/1554) ([InoMurko](https://github.com/InoMurko))
 - add: logging for ethereum tasks [\#1550](https://github.com/omgnetwork/elixir-omg/pull/1550) ([okalouti](https://github.com/okalouti))
 - feat: env configurable block\_submit\_max\_gas\_price [\#1548](https://github.com/omgnetwork/elixir-omg/pull/1548) ([unnawut](https://github.com/unnawut))
 - cache blocks into ets [\#1547](https://github.com/omgnetwork/elixir-omg/pull/1547) ([InoMurko](https://github.com/InoMurko))
@@ -147,6 +183,7 @@
 ### Bug fixes
 
 - prevent race condition for status cache [\#1558](https://github.com/omgnetwork/elixir-omg/pull/1558) ([InoMurko](https://github.com/InoMurko))
+- use fixed version of ex\_abi [\#1519](https://github.com/omgnetwork/elixir-omg/pull/1519) ([ayrat555](https://github.com/ayrat555))
 - fix: add Ink's log\_encoding\_error config [\#1512](https://github.com/omgnetwork/elixir-omg/pull/1512) ([unnawut](https://github.com/unnawut))
 - fix: exclude active exiting utxos from calls to /account.get\_exitable\_utxos [\#1505](https://github.com/omgnetwork/elixir-omg/pull/1505) ([pgebal](https://github.com/pgebal))
 - feat: update ink to v1.1 to fix Mix module not found [\#1504](https://github.com/omgnetwork/elixir-omg/pull/1504) ([unnawut](https://github.com/unnawut))
@@ -158,6 +195,7 @@
 - updating httpoison [\#1542](https://github.com/omgnetwork/elixir-omg/pull/1542) ([InoMurko](https://github.com/InoMurko))
 - use backport ex\_plasma [\#1537](https://github.com/omgnetwork/elixir-omg/pull/1537) ([achiurizo](https://github.com/achiurizo))
 - chore: sync v0.4.8 into master [\#1531](https://github.com/omgnetwork/elixir-omg/pull/1531) ([unnawut](https://github.com/unnawut))
+- set OMG.State GenServer timeout to 10s [\#1517](https://github.com/omgnetwork/elixir-omg/pull/1517) ([achiurizo](https://github.com/achiurizo))
 - refactor: remove fixture-based start exit test [\#1514](https://github.com/omgnetwork/elixir-omg/pull/1514) ([unnawut](https://github.com/unnawut))
 - test: watcher's /status.get cabbage test [\#1508](https://github.com/omgnetwork/elixir-omg/pull/1508) ([unnawut](https://github.com/unnawut))
 - refactor: move exit info related functions to smaller responsibility module [\#1503](https://github.com/omgnetwork/elixir-omg/pull/1503) ([boolafish](https://github.com/boolafish))
