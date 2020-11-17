@@ -42,6 +42,7 @@ defmodule OMG.ChildChainRPC.Web.Controller.Fallback do
 
   def call(conn, {:error, {:validation_error, param_name, validator}}) do
     error = error_info(conn, :operation_bad_request)
+    :telemetry.execute([:web, :fallback], %{error: 1}, %{error_code: error.code, route: current_route(conn)})
 
     conn
     |> put_view(Views.Error)
@@ -54,6 +55,7 @@ defmodule OMG.ChildChainRPC.Web.Controller.Fallback do
 
   def call(conn, {:error, reason}) do
     error = error_info(conn, reason)
+    :telemetry.execute([:web, :fallback], %{error: 1}, %{error_code: error.code, route: current_route(conn)})
 
     conn
     |> put_view(Views.Error)
@@ -70,5 +72,18 @@ defmodule OMG.ChildChainRPC.Web.Controller.Fallback do
       nil -> %{code: "#{action_name(conn)}#{inspect(reason)}", description: nil}
       error -> error
     end
+  end
+
+  # There isn't a way to get the route directly from a conn, so we need this roundabout way.
+  # We want the route instead of the request path because it's of limited cardinality for the metric tags.
+  defp current_route(%{private: %{phoenix_router: phoenix_router}} = conn) do
+    case Phoenix.Router.route_info(phoenix_router, conn.method, conn.request_path, conn.host) do
+      %{:route => route} -> route
+      :error -> nil
+    end
+  end
+
+  defp current_route(_) do
+    nil
   end
 end
