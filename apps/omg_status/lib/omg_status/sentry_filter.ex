@@ -18,13 +18,13 @@ defmodule OMG.Status.SentryFilter do
   """
   @behaviour Sentry.EventFilter
 
-  # this is an error that occasionally happens when transaction pool already contains 
+  # this is an error that occasionally happens when transaction pool already contains
   # our block submission transaction, comes from OMG.ChildChain.BlockQueue
   def exclude_exception?(%MatchError{term: {:error, :nonce_too_low}}, _) do
     true
   end
 
-  # when the development environment restarts it lacks network access  
+  # when the development environment restarts it lacks network access
   # something to do with Cloud DNS
   def exclude_exception?(%MatchError{term: {:error, :nxdomain}}, _) do
     true
