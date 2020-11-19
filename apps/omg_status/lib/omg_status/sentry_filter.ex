@@ -13,11 +13,21 @@
 # limitations under the License.
 
 defmodule OMG.Status.SentryFilter do
- @behaviour Sentry.EventFilter
- 
- def exclude_exception?(exception, source) do
-  IO.inspect exception, label: "exception exclude_exception?"
-  IO.inspect source, label: "source exclude_exception?"
-  false
- end
+  @behaviour Sentry.EventFilter
+
+  # this is an error that occasionally happens when transaction pool already contains 
+  # our block submission transaction, comes from OMG.ChildChain.BlockQueue
+  def exclude_exception?(%MatchError{term: {:error, :nonce_too_low}}, _) do
+    true
+  end
+
+  # when the development environment restarts it lacks network access  
+  # something to do with Cloud DNS
+  def exclude_exception?(%MatchError{term: {:error, :nxdomain}}, _) do
+    true
+  end
+
+  def exclude_exception?(_, _) do
+    false
+  end
 end

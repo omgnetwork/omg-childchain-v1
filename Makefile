@@ -85,7 +85,7 @@ help:
 list:
 	@$(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$'
 
-all: clean build-child_chain-prod
+all: clean build-child_chain-prod build-watcher-prod build-watcher_info-prod
 
 WATCHER_IMAGE_NAME      ?= "omisego/watcher:latest"
 WATCHER_INFO_IMAGE_NAME ?= "omisego/watcher_info:latest"
@@ -173,6 +173,18 @@ build-child_chain-prod: deps-elixir-omg
 build-child_chain-dev: deps-elixir-omg
 	$(ENV_DEV) mix do compile, release child_chain --overwrite
 
+build-watcher-prod: deps-elixir-omg
+	$(ENV_PROD) mix do compile, release watcher --overwrite
+
+build-watcher-dev: deps-elixir-omg
+	$(ENV_DEV) mix do compile, release watcher --overwrite
+
+build-watcher_info-prod: deps-elixir-omg
+	$(ENV_PROD) mix do compile, release watcher_info --overwrite
+
+build-watcher_info-dev: deps-elixir-omg
+	$(ENV_DEV) mix do compile, release watcher_info --overwrite
+
 build-test: deps-elixir-omg
 	$(ENV_TEST) mix compile
 
@@ -249,10 +261,16 @@ init_test: init-contracts
 init_test_reorg: init-contracts-reorg
 
 test:
-	mix test --include test --exclude common --exclude child_chain
+	mix test --include test --exclude common --exclude watcher --exclude watcher_info --exclude child_chain
+
+test-watcher:
+	mix test --include watcher --exclude watcher_info --exclude child_chain --exclude common --exclude test
+
+test-watcher_info:
+	mix test --include watcher_info --exclude watcher --exclude child_chain --exclude common --exclude test
 
 test-common:
-	mix test --include common --exclude child_chain --exclude test
+	mix test --include common --exclude child_chain --exclude watcher --exclude watcher_info --exclude test
 
 test-child_chain:
 	mix test --include child_chain --exclude common --exclude watcher  --exclude watcher_info --exclude test
@@ -265,6 +283,11 @@ changelog:
 
 .PHONY: changelog
 
+###
+start-integration-watcher:
+	docker-compose -f docker-compose-watcher.yml up
+###
+
 #
 # Docker
 #
@@ -274,7 +297,23 @@ docker-child_chain-prod:
 		-u root \
 		--entrypoint /bin/sh \
 		$(IMAGE_BUILDER) \
-		-c "cd /app && sleep 999999 && make build-child_chain-prod"
+		-c "cd /app && make build-child_chain-prod"
+
+docker-watcher-prod:
+	docker run --rm -it \
+		-v $(PWD):/app \
+		-u root \
+		--entrypoint /bin/sh \
+		$(IMAGE_BUILDER) \
+		-c "cd /app && make build-watcher-prod"
+
+docker-watcher_info-prod:
+	docker run --rm -it \
+		-v $(PWD):/app \
+		-u root \
+		--entrypoint /bin/sh \
+		$(IMAGE_BUILDER) \
+		-c "cd /app && make build-watcher_info-prod"
 
 docker-child_chain-build:
 	docker build -f Dockerfile.child_chain \
@@ -283,9 +322,25 @@ docker-child_chain-build:
 		-t $(CHILD_CHAIN_IMAGE_NAME) \
 		.
 
+docker-watcher-build:
+	docker build -f Dockerfile.watcher \
+		--build-arg release_version=$$(cat $(PWD)/VERSION)+$$(git rev-parse --short=7 HEAD) \
+		--cache-from $(WATCHER_IMAGE_NAME) \
+		-t $(WATCHER_IMAGE_NAME) \
+		.
+
+docker-watcher_info-build:
+	docker build -f Dockerfile.watcher_info \
+		--build-arg release_version=$$(cat $(PWD)/VERSION)+$$(git rev-parse --short=7 HEAD) \
+		--cache-from $(WATCHER_INFO_IMAGE_NAME) \
+		-t $(WATCHER_INFO_IMAGE_NAME) \
+		.
+
+docker-watcher: docker-watcher-prod docker-watcher-build
+docker-watcher_info: docker-watcher_info-prod docker-watcher_info-build
 docker-child_chain: docker-child_chain-prod docker-child_chain-build
 
-docker-build: docker-child_chain
+docker-build: docker-watcher docker-watcher_info docker-child_chain
 
 docker-push: docker
 	docker push $(CHILD_CHAIN_IMAGE_NAME)
@@ -322,6 +377,16 @@ docker-build-start-cluster:
 docker-stop-cluster: localchain_contract_addresses.env
 	docker-compose down
 
+docker-update-watcher: localchain_contract_addresses.env
+	docker stop elixir-omg_watcher_1
+	$(MAKE) docker-watcher
+	docker-compose up watcher
+
+docker-update-watcher_info: localchain_contract_addresses.env
+	docker stop elixir-omg_watcher_info_1
+	$(MAKE) docker-watcher_info
+	docker-compose up watcher_info
+
 docker-update-child_chain: localchain_contract_addresses.env
 	docker stop elixir-omg_childchain_1
 	$(MAKE) docker-child_chain
@@ -346,6 +411,12 @@ docker-nuke: localchain_contract_addresses.env
 	$(MAKE) clean
 	$(MAKE) init-contracts
 
+docker-remote-watcher:
+	docker exec -it watcher /app/bin/child_chain remote
+
+docker-remote-watcher_info:
+	docker exec -ti watcher_info /app/bin/watcher_info remote
+
 docker-remote-childchain:
 	docker exec -ti childchain /app/bin/child_chain remote
 
@@ -369,19 +440,73 @@ start-child_chain:
 	. ${OVERRIDING_VARIABLES} && \
 	_build/${BAREBUILD_ENV}/rel/child_chain/bin/child_chain $(OVERRIDING_START)
 
+start-watcher:
+	. ${OVERRIDING_VARIABLES} && \
+	echo "Building Watcher" && \
+	make build-watcher-${BAREBUILD_ENV} && \
+	echo "Potential cleanup" && \
+	rm -f ./_build/${BAREBUILD_ENV}/rel/watcher/var/sys.config || true && \
+	echo "Init Watcher DBs" && \
+	_build/${BAREBUILD_ENV}/rel/watcher/bin/watcher eval "OMG.DB.ReleaseTasks.InitKeyValueDB.run()" && \
+	echo "Run Watcher" && \
+	. ${OVERRIDING_VARIABLES} && \
+	PORT=${WATCHER_PORT} _build/${BAREBUILD_ENV}/rel/watcher/bin/watcher $(OVERRIDING_START)
+
+start-watcher_info:
+	. ${OVERRIDING_VARIABLES} && \
+	echo "Building Watcher Info" && \
+	make build-watcher_info-${BAREBUILD_ENV} && \
+	echo "Potential cleanup" && \
+	rm -f ./_build/${BAREBUILD_ENV}/rel/watcher_info/var/sys.config || true && \
+	echo "Init Watcher Info DBs" && \
+	_build/${BAREBUILD_ENV}/rel/watcher_info/bin/watcher_info eval "OMG.DB.ReleaseTasks.InitKeyValueDB.run()" && \
+	_build/${BAREBUILD_ENV}/rel/watcher_info/bin/watcher_info eval "OMG.WatcherInfo.ReleaseTasks.InitPostgresqlDB.migrate()" && \
+	_build/${BAREBUILD_ENV}/rel/watcher_info/bin/watcher_info eval "OMG.WatcherInfo.ReleaseTasks.EthereumTasks.run()" && \
+	echo "Run Watcher Info" && \
+	. ${OVERRIDING_VARIABLES} && \
+	PORT=${WATCHER_INFO_PORT} _build/${BAREBUILD_ENV}/rel/watcher_info/bin/watcher_info $(OVERRIDING_START)
+
 update-child_chain:
 	_build/dev/rel/child_chain/bin/child_chain stop ; \
 	$(ENV_DEV) mix do compile, release child_chain --overwrite && \
 	. ${OVERRIDING_VARIABLES} && \
 	exec _build/dev/rel/child_chain/bin/child_chain $(OVERRIDING_START) &
 
+update-watcher:
+	_build/dev/rel/watcher/bin/watcher stop ; \
+	$(ENV_DEV) mix do compile, release watcher --overwrite && \
+	. ${OVERRIDING_VARIABLES} && \
+	exec PORT=${WATCHER_PORT} _build/dev/rel/watcher/bin/watcher $(OVERRIDING_START) &
+
+update-watcher_info:
+	_build/dev/rel/watcher_info/bin/watcher_info stop ; \
+	$(ENV_DEV) mix do compile, release watcher_info --overwrite && \
+	. ${OVERRIDING_VARIABLES} && \
+	exec PORT=${WATCHER_INFO_PORT} _build/dev/rel/watcher_info/bin/watcher_info $(OVERRIDING_START) &
+
 stop-child_chain:
 	. ${OVERRIDING_VARIABLES} && \
 	_build/dev/rel/child_chain/bin/child_chain stop
 
+stop-watcher:
+	. ${OVERRIDING_VARIABLES} && \
+	_build/dev/rel/watcher/bin/watcher stop
+
+stop-watcher_info:
+	. ${OVERRIDING_VARIABLES} && \
+	_build/dev/rel/watcher_info/bin/watcher_info stop
+
 remote-child_chain:
 	. ${OVERRIDING_VARIABLES} && \
 	_build/dev/rel/child_chain/bin/child_chain remote
+
+remote-watcher:
+	. ${OVERRIDING_VARIABLES} && \
+	_build/dev/rel/watcher/bin/watcher remote
+
+remote-watcher_info:
+	. ${OVERRIDING_VARIABLES} && \
+	_build/dev/rel/watcher_info/bin/watcher_info remote
 
 get-alarms:
 	echo "Child Chain alarms" ; \

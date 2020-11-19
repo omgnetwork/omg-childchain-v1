@@ -13,8 +13,8 @@
 # limitations under the License.
 
 defmodule OMG.ChildChainRPC.Web.Endpoint do
+  use Sentry.PlugCapture
   use Phoenix.Endpoint, otp_app: :omg_child_chain_rpc
-  use Sentry.Phoenix.Endpoint
 
   plug(Plug.RequestId)
   plug(Plug.Logger, log: :debug)
@@ -26,6 +26,8 @@ defmodule OMG.ChildChainRPC.Web.Endpoint do
     pass: [],
     json_decoder: Jason
   )
+
+  plug(Sentry.PlugContext)
 
   plug(Plug.MethodOverride)
   plug(Plug.Head)
