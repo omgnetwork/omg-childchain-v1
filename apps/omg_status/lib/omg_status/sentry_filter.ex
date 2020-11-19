@@ -13,6 +13,9 @@
 # limitations under the License.
 
 defmodule OMG.Status.SentryFilter do
+  @moduledoc """
+  Sentry callback for filtering events.
+  """
   @behaviour Sentry.EventFilter
 
   # this is an error that occasionally happens when transaction pool already contains 
