@@ -434,28 +434,14 @@ jobs:
           working_directory: ~/project/priv/cabbage
           command: mix deps.get
       - run:
+          name: docker services logs
+          working_directory: ~/project/
+          background: true
+          command: docker-compose logs -f  
+      - run:
           name: Test
           working_directory: ~/project/priv/cabbage
           command: mix test
-      - run:
-          name: (Cabbage) Format generated code and check for warnings
-          working_directory: ~/project/priv/cabbage
-          command: |
-            # run format ONLY on formatted code so that it cleans up quoted atoms because
-            # we cannot exclude folders to --warnings-as-errors
-            mix format apps/child_chain_api/lib/child_chain_api/model/*.ex
-            mix format apps/watcher_info_api/lib/watcher_info_api/model/*.ex
-            mix format apps/watcher_security_critical_api/lib/watcher_security_critical_api/model/*.ex
-            MIX_ENV=test mix do compile --warnings-as-errors --ignore-module-conflict --force, test --exclude test
-      - save_cache:
-          key: v2-mix-specs-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
-          paths:
-            - "priv/cabbage/deps"
-      - run:
-          name: (Cabbage) Credo and formatting
-          command: |
-            cd priv/cabbage
-            mix do credo, format --check-formatted --dry-run
 
   test_docker_compose_performance:
     machine:

@@ -163,9 +163,9 @@ defmodule OMG.EthereumEventListener do
     {events, new_state} =
       state
       |> Core.get_events_range_for_download(sync_guide)
-      |> get_events(callbacks.get_events_callback)
+      |> get_events(callbacks.get_ethereum_events_callback)
 
-    db_update = [{:put, state.service_name, state.synced_height}]
+    db_update = [{:put, state.synced_height_update_key, state.synced_height}]
     :ok = :telemetry.execute([:process, __MODULE__], %{events: events}, state)
 
     {:ok, db_updates_from_callback} = callbacks.process_events_callback.(events)
