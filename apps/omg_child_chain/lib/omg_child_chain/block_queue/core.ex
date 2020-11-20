@@ -567,6 +567,7 @@ defmodule OMG.ChildChain.BlockQueue.Core do
       {mined_blocks, fresh_blocks} = split_existing_blocks(state, hashes)
 
       mined_submissions =
+        blocks =
         for {num, hash} <- mined_blocks do
           {num,
            %BlockSubmission{
@@ -575,7 +576,8 @@ defmodule OMG.ChildChain.BlockQueue.Core do
              nonce: calc_nonce(num, state.child_block_interval)
            }}
         end
-        |> Map.new()
+
+      Map.new(blocks)
 
       state = %{
         state
@@ -593,7 +595,8 @@ defmodule OMG.ChildChain.BlockQueue.Core do
   # mined are zipped with their numbers to submit
   defp split_existing_blocks(%__MODULE__{mined_child_block_num: blknum}, blknums_and_hashes) do
     {mined, fresh} =
-      Enum.find_index(blknums_and_hashes, &(elem(&1, 0) == blknum))
+      blknums_and_hashes
+      |> Enum.find_index(&(elem(&1, 0) == blknum))
       |> case do
         nil -> {[], blknums_and_hashes}
         index -> Enum.split(blknums_and_hashes, index + 1)

@@ -28,7 +28,7 @@ defmodule OMG.EthereumEventListener.Core do
 
   use Spandex.Decorators
 
-  # synced_height is what's being exchanged with `RootChainCoordinator`. 
+  # synced_height is what's being exchanged with `RootChainCoordinator`.
   # The point in root chain until where it processed
   defstruct synced_height_update_key: nil,
             service_name: nil,

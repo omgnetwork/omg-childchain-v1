@@ -100,15 +100,18 @@ defmodule OMG.TestHelper do
   end
 
   def create_encoded_fee_tx(blknum, owner, currency, amount) do
-    %Transaction.Signed{
+    signed_transaction = %Transaction.Signed{
       raw_tx: Transaction.Fee.new(blknum, {owner, currency, amount}),
       sigs: []
     }
-    |> Transaction.Signed.encode()
+
+    Transaction.Signed.encode(signed_transaction)
   end
 
-  def create_recovered_fee_tx(blknum, owner, currency, amount),
-    do: create_encoded_fee_tx(blknum, owner, currency, amount) |> Transaction.Recovered.recover_from!()
+  def create_recovered_fee_tx(blknum, owner, currency, amount) do
+    encoded_fee_tx = create_encoded_fee_tx(blknum, owner, currency, amount)
+    Transaction.Recovered.recover_from!(encoded_fee_tx)
+  end
 
   @doc """
   convenience function around Transaction.new to create signed transactions (see create_recovered)
@@ -138,8 +141,8 @@ defmodule OMG.TestHelper do
   def create_signed(inputs, outputs) do
     raw_tx =
       Transaction.Payment.new(
-        inputs |> Enum.map(fn {blknum, txindex, oindex, _} -> {blknum, txindex, oindex} end),
-        outputs |> Enum.map(fn {owner, currency, amount} -> {owner.addr, currency, amount} end)
+        Enum.map(inputs, fn {blknum, txindex, oindex, _} -> {blknum, txindex, oindex} end),
+        Enum.map(outputs, fn {owner, currency, amount} -> {owner.addr, currency, amount} end)
       )
 
     privs = get_private_keys(inputs)
@@ -198,6 +201,5 @@ defmodule OMG.TestHelper do
     |> Map.new()
   end
 
-  defp get_private_keys(inputs),
-    do: Enum.map(inputs, fn {_, _, _, owner} -> owner.priv end)
+  defp get_private_keys(inputs), do: Enum.map(inputs, fn {_, _, _, owner} -> owner.priv end)
 end

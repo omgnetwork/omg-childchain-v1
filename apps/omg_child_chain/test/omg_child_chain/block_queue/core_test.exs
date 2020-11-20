@@ -265,9 +265,7 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
                |> Core.enqueue_block("1", 1000, 0)
                |> Core.set_ethereum_status(4, 0, false)
 
-      assert {:dont_form_block, queue} =
-               queue
-               |> Core.set_ethereum_status(5, 0, false)
+      assert {:dont_form_block, queue} = Core.set_ethereum_status(queue, 5, 0, false)
 
       assert {:do_form_block, _queue} =
                queue
@@ -304,17 +302,11 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
     test "Block generation is driven by last enqueued block Ethereum height and if block is empty or not", %{
       empty: empty
     } do
-      assert {:dont_form_block, _} =
-               empty
-               |> Core.set_ethereum_status(0, 0, false)
+      assert {:dont_form_block, _} = Core.set_ethereum_status(empty, 0, 0, false)
 
-      assert {:dont_form_block, _} =
-               empty
-               |> Core.set_ethereum_status(1, 0, true)
+      assert {:dont_form_block, _} = Core.set_ethereum_status(empty, 1, 0, true)
 
-      assert {:do_form_block, queue} =
-               empty
-               |> Core.set_ethereum_status(1, 0, false)
+      assert {:do_form_block, queue} = Core.set_ethereum_status(empty, 1, 0, false)
 
       assert {:dont_form_block, _} =
                queue

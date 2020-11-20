@@ -157,11 +157,11 @@ defmodule OMG.State.UtxoSetTest do
 
   describe "filter_owned_by/2" do
     test "will find Bob's utxos", %{bob: bob, utxo_set: utxo_set} do
-      assert [_, _] = UtxoSet.filter_owned_by(utxo_set, bob.addr) |> Enum.to_list()
+      assert [_, _] = Enum.to_list(UtxoSet.filter_owned_by(utxo_set, bob.addr))
     end
 
     test "will NOT find Alice's utxos, b/c she doesn't have any", %{alice: alice, utxo_set: utxo_set} do
-      assert [] = UtxoSet.filter_owned_by(utxo_set, alice.addr) |> Enum.to_list()
+      assert [] = Enum.to_list(UtxoSet.filter_owned_by(utxo_set, alice.addr))
     end
   end
 

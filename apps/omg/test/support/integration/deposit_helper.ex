@@ -41,7 +41,7 @@ defmodule Support.Integration.DepositHelper do
   def deposit_to_child_chain(to, value, token_addr) when is_binary(token_addr) and byte_size(token_addr) == 20 do
     contract_addr = Encoding.from_hex(Configuration.contracts().erc20_vault)
 
-    {:ok, _} = Eth.Token.approve(to, contract_addr, value, token_addr) |> DevHelper.transact_sync!()
+    {:ok, _} = DevHelper.transact_sync!(Eth.Token.approve(to, contract_addr, value, token_addr))
 
     {:ok, receipt} =
       Transaction.Payment.new([], [{to, token_addr, value}])
