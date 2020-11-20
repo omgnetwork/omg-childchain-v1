@@ -28,7 +28,8 @@ defmodule OMG.EthereumEventListener.Core do
 
   use Spandex.Decorators
 
-  # synced_height is what's being exchanged with `RootChainCoordinator` - the point in root chain until where it processed
+  # synced_height is what's being exchanged with `RootChainCoordinator`. 
+  # The point in root chain until where it processed
   defstruct synced_height_update_key: nil,
             service_name: nil,
             synced_height: 0,
@@ -82,9 +83,10 @@ defmodule OMG.EthereumEventListener.Core do
         # both root_chain_height and sync_height are assumed to have any required finality margins applied by caller
         root_chain_height = sync_guide.root_chain_height
         request_max_size = state.request_max_size
-
-        next_upper_bound =
-          max(min(root_chain_height, sync_guide.sync_height + request_max_size), sync_guide.sync_height)
+        # root_chain_height is ethereums current height, we can't get pass that!
+        # so we find the min between root chain height and
+        # the current sync hight (state.synced_height) + what the max is (default is 1000)
+        next_upper_bound = max(min(root_chain_height, state.synced_height + request_max_size), sync_guide.sync_height)
 
         {:get_events, {state.synced_height + 1, next_upper_bound}, %{state | synced_height: next_upper_bound}}
     end

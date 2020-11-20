@@ -165,13 +165,13 @@ defmodule OMG.EthereumEventListener do
       |> Core.get_events_range_for_download(sync_guide)
       |> get_events(callbacks.get_ethereum_events_callback)
 
-    db_update = [{:put, state.synced_height_update_key, state.synced_height}]
-    :ok = :telemetry.execute([:process, __MODULE__], %{events: events}, state)
+    db_update = [{:put, new_state.synced_height_update_key, new_state.synced_height}]
+    :ok = :telemetry.execute([:process, __MODULE__], %{events: events}, new_state)
 
     {:ok, db_updates_from_callback} = callbacks.process_events_callback.(events)
     :ok = publish_events(events)
     :ok = OMG.DB.multi_update(db_update ++ db_updates_from_callback)
-    :ok = RootChainCoordinator.check_in(new_state.synced_height, state.service_name)
+    :ok = RootChainCoordinator.check_in(new_state.synced_height, new_state.service_name)
 
     new_state
   end
