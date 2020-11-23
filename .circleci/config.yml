@@ -400,6 +400,8 @@ jobs:
   test_docker_compose_release:
     machine:
       image: ubuntu-1604:201903-01
+    environment:
+      SNAPSHOT: SNAPSHOT_MIX_EXIT_PERIOD_SECONDS_120
     steps:
       - checkout
       - run:
@@ -415,9 +417,7 @@ jobs:
       - make_docker_images
       - run:
           name: Start daemon services
-          command: |
-            cd priv/cabbage
-            make start_daemon_services-2 || (START_RESULT=$?; docker-compose logs; exit $START_RESULT;)
+          command: make cabbage-start-services
       - install_elixir
       - run: sh .circleci/status.sh
       - run:
@@ -530,9 +530,7 @@ jobs:
       - make_docker_images
       - run:
           name: Start daemon services
-          command: |
-            cd priv/cabbage
-            make start_daemon_services_reorg-2 || (START_RESULT=$?; docker-compose logs; exit $START_RESULT;)
+          command: make cabbage-start-services-reorg
       - install_elixir
       - run: sh .circleci/status.sh
       - run:
@@ -624,7 +622,7 @@ jobs:
             make start-child_chain OVERRIDING_START=start_iex OVERRIDING_VARIABLES=./bin/variables_test_barebone
           background: true
           no_output_timeout: 2400
-      - run: 
+      - run:
           name: Has Childchain started?
           command: |
             attempt_counter=0

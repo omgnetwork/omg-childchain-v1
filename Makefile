@@ -281,14 +281,35 @@ docker-push: docker
 
 ### Cabbage reorg docker logs
 
+cabbage-reorg-watcher-logs:
+	docker-compose -f docker-compose.yml -f docker-compose.reorg.yml -f docker-compose.specs.yml logs --follow watcher
+
+cabbage-reorg-watcher_info-logs:
+	docker-compose -f docker-compose.yml -f docker-compose.reorg.yml -f docker-compose.specs.yml logs --follow watcher_info
+
 cabbage-reorg-childchain-logs:
-	docker-compose -f docker-compose.yml -f ./priv/cabbage/docker-compose-2-reorg.yml -f ./priv/cabbage/docker-compose-2-specs.yml logs --follow childchain
+	docker-compose -f docker-compose.yml -f docker-compose.reorg.yml -f docker-compose.specs.yml logs --follow childchain
 
 cabbage-reorg-geth-logs:
-	docker-compose -f docker-compose.yml -f ./priv/cabbage/docker-compose-2-reorg.yml -f ./priv/cabbage/docker-compose-2-specs.yml logs --follow | grep "geth"
+	docker-compose -f docker-compose.yml -f docker-compose.reorg.yml -f docker-compose.specs.yml logs --follow | grep "geth"
 
 cabbage-reorgs-logs:
-	docker-compose -f docker-compose.yml -f ./priv/cabbage/docker-compose-2-reorg.yml -f ./priv/cabbage/docker-compose-2-specs.yml logs --follow | grep "reorg"
+	docker-compose -f docker-compose.yml -f docker-compose.reorg.yml -f docker-compose.specs.yml logs --follow | grep "reorg"
+
+### Cabbage service commands
+
+cabbage-start-services:
+	make init_test && \
+        cp ./localchain_contract_addresses.env ./priv/cabbage/apps/itest/localchain_contract_addresses.env && \
+	docker-compose -f docker-compose.yml -f docker-compose.feefeed.yml -f docker-compose.specs.yml up -d || \
+	(START_RESULT=$?; docker-compose logs; exit $START_RESULT;)
+
+cabbage-start-services-reorg:
+	make init_test_reorg && \
+	cp ./localchain_contract_addresses.env ./priv/cabbage/apps/itest/localchain_contract_addresses.env && \
+	docker-compose -f docker-compose.yml -f docker-compose.feefeed.yml -f docker-compose.reorg.yml -f docker-compose.specs.yml up -d || \
+	(START_RESULT=$?; docker-compose logs; exit $START_RESULT;)
+
 
 ###OTHER
 docker-start-cluster:
