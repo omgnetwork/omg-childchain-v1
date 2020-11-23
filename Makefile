@@ -281,6 +281,12 @@ docker-push: docker
 
 ### Cabbage reorg docker logs
 
+cabbage-reorg-watcher-logs:
+	docker-compose -f docker-compose.yml -f docker-compose.reorg.yml -f docker-compose.specs.yml logs --follow watcher
+
+cabbage-reorg-watcher_info-logs:
+	docker-compose -f docker-compose.yml -f docker-compose.reorg.yml -f docker-compose.specs.yml logs --follow watcher_info
+
 cabbage-reorg-childchain-logs:
 	docker-compose -f docker-compose.yml -f docker-compose.reorg.yml -f docker-compose.specs.yml logs --follow childchain
 
