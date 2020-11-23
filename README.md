@@ -140,8 +140,7 @@ make docker-watcher_info
 
 Start geth and postgres:
 ```bash
-cd priv/cabbage
-make start_daemon_services-2
+make cabbage-start-services
 ```
 
 If the above command fails with the message similar to:
