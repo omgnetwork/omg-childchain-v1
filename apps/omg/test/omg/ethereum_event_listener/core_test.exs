@@ -53,22 +53,15 @@ defmodule OMG.EthereumEventListener.CoreTest do
   test "works well close to zero" do
     0
     |> create_state()
-    # |> IO.inspect
     |> Core.get_events_range(%SyncGuide{sync_height: 1, root_chain_height: 10})
     |> assert_range({1, 1})
-    # |> IO.inspect
     |> Core.get_events_range(%SyncGuide{sync_height: 8, root_chain_height: 10})
     |> assert_range({2, 7})
-
-    # |> IO.inspect
 
     0
     |> create_state()
     |> Core.get_events_range(%SyncGuide{sync_height: 9, root_chain_height: 10})
     |> assert_range({1, 6})
-
-    # |> Core.get_events_range(%SyncGuide{sync_height: 9, root_chain_height: 10})
-    # |> assert_range({2, 7})
   end
 
   test "always returns correct height to check in" do
