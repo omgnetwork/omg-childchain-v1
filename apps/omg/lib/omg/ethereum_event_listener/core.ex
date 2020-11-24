@@ -71,22 +71,19 @@ defmodule OMG.EthereumEventListener.Core do
   end
 
   @decorate span(service: :ethereum_event_listener, type: :backend, name: "get_events_range_for_download/2")
-  @spec get_events_range_for_download(t(), SyncGuide.t()) ::
+  @spec get_events_range(t(), SyncGuide.t()) ::
           {:dont_fetch_events, t()} | {:get_events, {non_neg_integer, non_neg_integer}, t()}
-  def get_events_range_for_download(state, sync_guide) do
+  def get_events_range(state, sync_guide) do
     case sync_guide.sync_height <= state.synced_height do
       true ->
         {:dont_fetch_events, state}
 
       _ ->
-        # grab as much as allowed, but not higher than current root_chain_height and at least as much as needed to sync
-        # both root_chain_height and sync_height are assumed to have any required finality margins applied by caller
-        root_chain_height = sync_guide.root_chain_height
-        request_max_size = state.request_max_size
-        # root_chain_height is ethereums current height, we can't get pass that!
-        # so we find the min between root chain height and
-        # the current sync hight (state.synced_height) + what the max is (default is 1000)
-        next_upper_bound = max(min(root_chain_height, state.synced_height + request_max_size), sync_guide.sync_height)
+        # if sync_guide.sync_height has applied margin (reorg protection)
+        # the only thing we need to be aware of is that we don't go pass that!
+        # but we want to move as fast as possible so we try to fetch as much as we can (request_max_size)
+
+        next_upper_bound = min(sync_guide.sync_height, state.synced_height + 1 + state.request_max_size)
 
         {:get_events, {state.synced_height + 1, next_upper_bound}, %{state | synced_height: next_upper_bound}}
     end

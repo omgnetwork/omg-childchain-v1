@@ -564,7 +564,7 @@ jobs:
       - run: echo 'export PATH=~/.cargo/bin:$PATH' >> $BASH_ENV
       - docker_login
       - run:
-          name: Start geth, postgres, feefeed and pull in blockchain snapshot
+          name: Start geth, feefeed and pull in blockchain snapshot
           command: make start-services
           background: true
       - run: sudo chmod 777 data/

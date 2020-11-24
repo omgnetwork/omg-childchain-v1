@@ -14,7 +14,7 @@
 defmodule OMG.ChildChain.EthereumEventAggregator do
   @moduledoc """
   This process combines all plasma contract events we're interested in and does eth_getLogs + enriches them if needed
-  for all Ethereum Event Listener processes. 
+  for all Ethereum Event Listener processes.
   """
   use GenServer
   require Logger
@@ -74,7 +74,7 @@ defmodule OMG.ChildChain.EthereumEventAggregator do
     {:ok,
      %{
        # 200 blocks of events will be kept in memory
-       delete_events_threshold_height_blknum: 200,
+       delete_events_threshold_height_blknum: 1000,
        ets_bucket: ets_bucket,
        event_signatures: events_signatures,
        events: events,

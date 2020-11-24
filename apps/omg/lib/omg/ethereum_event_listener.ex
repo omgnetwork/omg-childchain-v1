@@ -162,7 +162,7 @@ defmodule OMG.EthereumEventListener do
   defp sync_height(state, callbacks, sync_guide) do
     {events, new_state} =
       state
-      |> Core.get_events_range_for_download(sync_guide)
+      |> Core.get_events_range(sync_guide)
       |> get_events(callbacks.get_ethereum_events_callback)
 
     db_update = [{:put, new_state.synced_height_update_key, new_state.synced_height}]

@@ -24,52 +24,73 @@ defmodule OMG.EthereumEventListener.CoreTest do
   @service_name :name
   @request_max_size 5
 
-  test "asks until root chain height provided" do
-    create_state(0, request_max_size: 100)
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 1, root_chain_height: 10})
+  test "will respect request_max_size if its allowed!" do
+    create_state(0, request_max_size: 10)
+    |> Core.get_events_range(%SyncGuide{sync_height: 20, root_chain_height: 10})
+    |> assert_range({1, 11})
+
+    create_state(0, request_max_size: 10)
+    |> Core.get_events_range(%SyncGuide{sync_height: 11, root_chain_height: 10})
+    |> assert_range({1, 11})
+
+    create_state(0, request_max_size: 10)
+    |> Core.get_events_range(%SyncGuide{sync_height: 10, root_chain_height: 10})
     |> assert_range({1, 10})
   end
 
-  test "max request size respected" do
+  test "max request size is ignored if above allowed sync_height" do
     create_state(0, request_max_size: 2)
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 1, root_chain_height: 10})
-    |> assert_range({1, 2})
+    |> Core.get_events_range(%SyncGuide{sync_height: 1, root_chain_height: 10})
+    |> assert_range({1, 1})
   end
 
-  test "max request size ignored if caller is insiting to get a lot of events" do
-    # this might be counterintuitive, but to we require that the requested sync_height is never left unhandled
+  test "max request size ignored if caller is insisting to get a lot of events" do
     create_state(0, request_max_size: 2)
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 4, root_chain_height: 10})
-    |> assert_range({1, 4})
+    |> Core.get_events_range(%SyncGuide{sync_height: 4, root_chain_height: 10})
+    |> assert_range({1, 3})
   end
 
   test "works well close to zero" do
     0
     |> create_state()
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 1, root_chain_height: 10})
-    |> assert_range({1, 5})
+    # |> IO.inspect
+    |> Core.get_events_range(%SyncGuide{sync_height: 1, root_chain_height: 10})
+    |> assert_range({1, 1})
+    # |> IO.inspect
+    |> Core.get_events_range(%SyncGuide{sync_height: 8, root_chain_height: 10})
+    |> assert_range({2, 7})
+
+    # |> IO.inspect
+
+    0
+    |> create_state()
+    |> Core.get_events_range(%SyncGuide{sync_height: 9, root_chain_height: 10})
+    |> assert_range({1, 6})
+
+    # |> Core.get_events_range(%SyncGuide{sync_height: 9, root_chain_height: 10})
+    # |> assert_range({2, 7})
   end
 
   test "always returns correct height to check in" do
     state =
       0
       |> create_state()
-      |> Core.get_events_range_for_download(%SyncGuide{sync_height: 1, root_chain_height: 10})
-      |> assert_range({1, 5})
+      |> Core.get_events_range(%SyncGuide{sync_height: 1, root_chain_height: 10})
+      |> assert_range({1, 1})
 
-    assert state.synced_height == 5
+    assert state.synced_height == 1
   end
 
   test "produces next ethereum height range to get events from" do
     0
     |> create_state()
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 5, root_chain_height: 10})
+    |> Core.get_events_range(%SyncGuide{sync_height: 5, root_chain_height: 10})
     |> assert_range({1, 5})
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 5, root_chain_height: 10})
+    |> Core.get_events_range(%SyncGuide{sync_height: 5, root_chain_height: 10})
     |> assert_range(:dont_fetch_events)
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 7, root_chain_height: 10})
-    |> assert_range({6, 10})
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 7, root_chain_height: 10})
+    |> Core.get_events_range(%SyncGuide{sync_height: 7, root_chain_height: 10})
+    |> assert_range({6, 7})
+    |> Core.get_events_range(%SyncGuide{sync_height: 7, root_chain_height: 10})
     |> assert_range(:dont_fetch_events)
   end
 
@@ -77,67 +98,67 @@ defmodule OMG.EthereumEventListener.CoreTest do
     # doesn't make too much sense, but still should work well
     0
     |> create_state()
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 5, root_chain_height: 5})
+    |> Core.get_events_range(%SyncGuide{sync_height: 5, root_chain_height: 5})
     |> assert_range({1, 5})
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 7, root_chain_height: 5})
+    |> Core.get_events_range(%SyncGuide{sync_height: 7, root_chain_height: 5})
     |> assert_range({6, 7})
   end
 
   test "will be eager to get more events, even if none are pulled at first. All will be returned" do
     0
     |> create_state()
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 2, root_chain_height: 2})
+    |> Core.get_events_range(%SyncGuide{sync_height: 2, root_chain_height: 2})
     |> assert_range({1, 2})
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 4, root_chain_height: 4})
+    |> Core.get_events_range(%SyncGuide{sync_height: 4, root_chain_height: 4})
     |> assert_range({3, 4})
   end
 
   test "restart allows to continue with proper bounds" do
     1
     |> create_state()
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 4, root_chain_height: 10})
-    |> assert_range({2, 6})
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 4, root_chain_height: 10})
+    |> Core.get_events_range(%SyncGuide{sync_height: 4, root_chain_height: 10})
+    |> assert_range({2, 4})
+    |> Core.get_events_range(%SyncGuide{sync_height: 4, root_chain_height: 10})
     |> assert_range(:dont_fetch_events)
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 5, root_chain_height: 10})
-    |> assert_range(:dont_fetch_events)
+    |> Core.get_events_range(%SyncGuide{sync_height: 5, root_chain_height: 10})
+    |> assert_range({5, 5})
 
     3
     |> create_state()
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 3, root_chain_height: 10})
+    |> Core.get_events_range(%SyncGuide{sync_height: 3, root_chain_height: 10})
     |> assert_range(:dont_fetch_events)
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 5, root_chain_height: 10})
-    |> assert_range({4, 8})
+    |> Core.get_events_range(%SyncGuide{sync_height: 5, root_chain_height: 10})
+    |> assert_range({4, 5})
 
     3
     |> create_state()
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 7, root_chain_height: 10})
-    |> assert_range({4, 8})
+    |> Core.get_events_range(%SyncGuide{sync_height: 7, root_chain_height: 10})
+    |> assert_range({4, 7})
   end
 
-  test "can get multiple events from one height" do
+  test "wont move over if not allowed by sync_height" do
     5
     |> create_state()
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 6, root_chain_height: 10})
-    |> assert_range({6, 10})
+    |> Core.get_events_range(%SyncGuide{sync_height: 6, root_chain_height: 10})
+    |> assert_range({6, 6})
   end
 
   test "can get an empty events list when events too fresh" do
     4
     |> create_state()
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 6, root_chain_height: 10})
-    |> assert_range({5, 9})
+    |> Core.get_events_range(%SyncGuide{sync_height: 6, root_chain_height: 10})
+    |> assert_range({5, 6})
   end
 
   test "persists/checks in eth_height without margins substracted, and never goes negative" do
     create_state(0, request_max_size: 10)
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 6, root_chain_height: 10})
-    |> assert_range({1, 10})
+    |> Core.get_events_range(%SyncGuide{sync_height: 6, root_chain_height: 10})
+    |> assert_range({1, 6})
   end
 
   test "tolerates being asked to sync on height already synced" do
     create_state(5)
-    |> Core.get_events_range_for_download(%SyncGuide{sync_height: 1, root_chain_height: 10})
+    |> Core.get_events_range(%SyncGuide{sync_height: 1, root_chain_height: 10})
     |> assert_range(:dont_fetch_events)
   end
 
