@@ -402,6 +402,7 @@ jobs:
       image: ubuntu-1604:201903-01
     environment:
       SNAPSHOT: SNAPSHOT_MIX_EXIT_PERIOD_SECONDS_120
+    parallelism: 4
     steps:
       - checkout
       - run:
@@ -441,7 +442,11 @@ jobs:
       - run:
           name: Test
           working_directory: ~/project/priv/cabbage
-          command: mix test
+          command: |
+            grep -r "@moduletag" ./apps/itest/ | awk '{print "--include " $3}' | tr -d ':' > tags.txt
+            echo $(circleci tests split ./tags.txt)
+            circleci tests split ./tags.txt > /tmp/tests-to-run
+            mix test --exclude test $(cat /tmp/tests-to-run)
 
   test_docker_compose_performance:
     machine:

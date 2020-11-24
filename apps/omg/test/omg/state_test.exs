@@ -18,16 +18,12 @@ defmodule OMG.StateTest do
   """
   use ExUnitFixtures
   use ExUnit.Case, async: false
-
   use OMG.DB.Fixtures
 
-  alias OMG.State
-  alias OMG.TestHelper
   alias OMG.Utxo
 
   require Utxo
 
-  @eth OMG.Eth.zero_address()
   @fee_claimer_address Base.decode16!("DEAD000000000000000000000000000000000000")
 
   deffixture standalone_state_server(db_initialized) do
