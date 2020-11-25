@@ -19,12 +19,12 @@ executors:
 
   builder:
     docker:
-      - image: omisegoimages/elixir-omg-builder:stable-20200410
+      - image: omisegoimages/elixir-omg-builder:dev-da1ecc8
     working_directory: ~/src
 
   builder_pg:
     docker:
-      - image: omisegoimages/elixir-omg-builder:stable-20200410
+      - image: omisegoimages/elixir-omg-builder:dev-da1ecc8
       - image: circleci/postgres:9.6-alpine
         environment:
           POSTGRES_USER: omisego_dev
@@ -34,7 +34,7 @@ executors:
 
   builder_pg_geth:
     docker:
-      - image: omisegoimages/elixir-omg-tester:stable-20200410
+      - image: omisegoimages/elixir-omg-tester:dev-da1ecc8
       - image: circleci/postgres:9.6-alpine
         environment:
           POSTGRES_USER: omisego_dev
@@ -44,10 +44,25 @@ executors:
 
   deployer:
     docker:
-      - image: omisegoimages/elixir-omg-deploy:stable-20200410
+      - image: omisegoimages/elixir-omg-deploy:dev-da1ecc8
     working_directory: ~/src
 
 commands:
+
+  add_rust_to_path:
+    description: "Add path to PATH env var"
+    steps:
+      - run:
+          name: Add rust to PATH env
+          command: echo 'export PATH=~/.cargo/bin/:$PATH' >> $BASH_ENV
+  install_rust:
+    description: "Install Rust"
+    steps:
+      - run:
+          name: Install Rust
+          command: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - add_rust_to_path
+
   setup_elixir-omg_workspace:
     description: "Setup workspace"
     steps:
@@ -66,31 +81,36 @@ commands:
       - run: make docker-child_chain
 
   install_elixir:
+    parameters:
+      cache:
+        type: string
+      dir:
+        type: string
     description: Installs elixir and checks if docker is healthy
     steps:
-      - run:
-          name: Print docker states
-          command: |
-            docker image ls
-            docker-compose ps
       - restore_cache:
-          key: v4-asdf-install
+          key: v6-asdf-install-<<parameters.cache>>
       - run:
           name: Install Erlang and Elixir
           command: |
-            [ -d ~/.asdf-vm ] || git clone https://github.com/asdf-vm/asdf.git ~/.asdf-vm --branch v0.7.8
+            cd <<parameters.dir>>
+            [ -d ~/.asdf-vm ] || git clone https://github.com/asdf-vm/asdf.git ~/.asdf-vm --branch v0.8.0
             echo 'source ~/.asdf-vm/asdf.sh' >> $BASH_ENV
             source $BASH_ENV
             asdf plugin-add erlang || asdf plugin-update erlang
             asdf plugin-add elixir || asdf plugin-update elixir
+            asdf plugin-add rust || asdf plugin-update rust
             asdf install
           no_output_timeout: 2400
+      - install_rust
       - save_cache:
-          key: v4-asdf-install
+          key: v6-asdf-install-<<parameters.cache>>
           paths:
             - ~/.asdf
             - ~/.asdf-vm
-      - run: make install-hex-rebar
+      - run: |
+          cd <<parameters.dir>>
+          make install-hex-rebar
       - restore_cache:
           key: v2-mix-specs-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
 
@@ -108,7 +128,7 @@ jobs:
           no_output_timeout: 2400
       - run: make deps-elixir-omg
       - run: ERLANG_ROCKSDB_BUILDOPTS='-j 2' make build-test
-      - run: mix test --trace
+      - run: mix test
       - run:
           name: Integration Tests
           command: |
@@ -122,24 +142,50 @@ jobs:
       MIX_ENV: test
     steps:
       - checkout
-      - run: echo 'export PATH=~/.cargo/bin:$PATH' >> $BASH_ENV
+      - run:
+          command: |
+            brew install postgres
+            initdb /usr/local/var/postgres/data
+            pg_ctl -D /usr/local/var/postgres/data -l /tmp/postgresql.log start
+            psql template1 \<<EOF
+            CREATE USER omisego_dev WITH CREATEDB ENCRYPTED PASSWORD 'omisego_dev';
+            CREATE DATABASE omisego_dev OWNER 'omisego_dev';
+            EOF
+      - restore_cache:
+          key: v6-asdf-install-barebuild_macos
       - run: |
-          brew install postgres
-          initdb /usr/local/var/postgres/data
-          pg_ctl -D /usr/local/var/postgres/data -l /tmp/postgresql.log start
-          psql template1 \<<EOF
-          CREATE USER omisego_dev WITH CREATEDB ENCRYPTED PASSWORD 'omisego_dev';
-          CREATE DATABASE omisego_dev OWNER 'omisego_dev';
-          EOF
+          set -e
+          [ -d ~/.asdf-vm ] || git clone https://github.com/asdf-vm/asdf.git ~/.asdf-vm --branch v0.8.0
+          echo -e '\n. $HOME/.asdf/asdf.sh' >> $BASH_ENV
       - run: |
-          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.7.4
-          echo -e '\n. $HOME/.asdf/asdf.sh' >> ~/.bash_profile
-          echo -e '\n. $HOME/.asdf/completions/asdf.bash' >> ~/.bash_profile
-          source ~/.bash_profile
-          asdf plugin-add elixir https://github.com/asdf-vm/asdf-elixir.git
-          asdf plugin-add erlang https://github.com/asdf-vm/asdf-erlang.git
+          set -e
+          source $BASH_ENV
+          if ! asdf plugin-list | grep erlang; then
+            asdf plugin-add erlang https://github.com/asdf-vm/asdf-erlang.git
+          else
+            asdf plugin-update erlang
+          fi
+          if ! asdf plugin-list | grep elixir; then
+            asdf plugin-add elixir https://github.com/asdf-vm/asdf-elixir.git
+          else
+            asdf plugin-update elixir
+          fi
+          if ! asdf plugin-list | grep rust; then
+            asdf plugin-add rust https://github.com/code-lever/asdf-rust.git
+          else
+            asdf plugin-update rust
+          fi
           asdf install
+      - install_rust
+      - save_cache:
+          key: v6-asdf-install-barebuild_macos
+          paths:
+            - ~/.asdf
+            - ~/.asdf-vm
       - run: make init_test
+      - run:
+          command: ./bin/rocksdb
+          no_output_timeout: 2400
       - run:
           command: ./bin/setup
           no_output_timeout: 2400
@@ -284,7 +330,7 @@ jobs:
           name: Integration Tests Part Child Chain
           command: |
             export SHELL=/bin/bash
-            mix test --include child_chain --exclude common --exclude test --trace
+            mix test --include child_chain --exclude common --exclude test
 
   common_integration_tests:
     executor: builder_pg_geth
@@ -302,7 +348,7 @@ jobs:
           name: Integration Tests Part Common
           command: |
             export SHELL=/bin/bash
-            mix test --include common --exclude child_chain --exclude test --trace
+            mix test --include common --exclude child_chain --exclude test
 
   test:
     executor: builder_pg
@@ -358,7 +404,7 @@ jobs:
           command: |
             # Slow, serial integration test, run nightly. Here to make sure the standard `mix test --trace --only integration` works
             export SHELL=/bin/bash
-            mix test --trace --only integration
+            mix test --only integration
 
   dialyzer:
     executor: builder_pg
@@ -406,7 +452,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: "Pull Submodules"
+          name: "Pull Submodules - specs"
           command: |
             git submodule init
             git submodule update --remote
@@ -419,8 +465,14 @@ jobs:
       - run:
           name: Start daemon services
           command: make cabbage-start-services
-      - install_elixir
+      - install_elixir:
+          cache: "test_docker_compose_release"
+          dir: "~/project"
       - run: sh .circleci/status.sh
+      - run:
+          name: Log daemon services
+          command: docker-compose logs -f
+          background: true
       - run:
           name: Openapi install
           command: make install
@@ -430,8 +482,11 @@ jobs:
           working_directory: ~/project/priv/cabbage
           command: |
             make generate_api_code
+      - install_elixir:
+          cache: "test_docker_compose_release_cabbage"
+          dir: "~/project/priv/cabbage"
       - run:
-          name: Deps get
+          name: Cabbage specs deps get
           working_directory: ~/project/priv/cabbage
           command: mix deps.get
       - run:
@@ -471,7 +526,6 @@ jobs:
       - run:
           name: Start daemon services
           command: make cabbage-start-services-reorg
-      - install_elixir
       - run: sh .circleci/status.sh
       - run:
           name: Print watcher logs
@@ -493,10 +547,13 @@ jobs:
           name: Print reorg logs
           command: make cabbage-reorgs-logs
           background: true
+      - install_elixir:
+          cache: "test_docker_compose_reorg"
+          dir: "~/project/priv/cabbage"
       - run:
           name: Run specs
+          working_directory: "~/project/priv/cabbage"
           command: |
-            cd priv/cabbage
             make install
             make generate_api_code
             mix deps.get
@@ -510,36 +567,15 @@ jobs:
       TERM: xterm-256color
     steps:
       - checkout
-      - run:
-          name: "Pull Submodules"
-          command: |
-            git submodule init
-            git submodule update --remote
-      - run: echo 'export PATH=~/.cargo/bin:$PATH' >> $BASH_ENV
       - docker_login
       - run:
           name: Start geth, feefeed and pull in blockchain snapshot
           command: make start-services
           background: true
       - run: sudo chmod 777 data/
-      - run: echo 'export PATH=~/.cargo/bin:$PATH' >> $BASH_ENV
-      - restore_cache:
-          key: v4-asdf-install
-      - run:
-          name: Install Erlang and Elixir
-          command: |
-            [ -d ~/.asdf-vm ] || git clone https://github.com/asdf-vm/asdf.git ~/.asdf-vm --branch v0.7.8
-            echo 'source ~/.asdf-vm/asdf.sh' >> $BASH_ENV
-            source $BASH_ENV
-            asdf plugin-add erlang || asdf plugin-update erlang
-            asdf plugin-add elixir || asdf plugin-update elixir
-            asdf install
-          no_output_timeout: 2400
-      - save_cache:
-          key: v4-asdf-install
-          paths:
-            - ~/.asdf
-            - ~/.asdf-vm
+      - install_elixir:
+          cache: "test_barebone_release"
+          dir: "~/project"
       - run:
           name: Install deps
           command: |
@@ -672,6 +708,8 @@ workflows:
               only: /.+/
             tags:
               only: /.+/
+      - barebuild_macos:
+          filters: *all_branches_and_tags
       - test_barebone_release:
           filters: *all_branches_and_tags
       - notify_services:

@@ -158,6 +158,26 @@ defmodule OMG.State do
 
   @doc """
   see `exec/2`
+  see `deposit/1`
+  see `exit_utxos/1`
+      Flow:
+        - translates the triggers to UTXO positions digestible by the UTXO set
+        - exits the UTXOs from the ledger if they exists, reports invalidity wherever they don't
+        - returns the `db_updates` to be applied by the caller
+  see `utxo_exists/1`
+  see `get_status/0`
+  see `close_block/0`
+      Works exactly like `handle_cast(:form_block)` but:
+      - is synchronous
+      - relies on the caller to handle persistence, instead of handling itself
+
+      Someday, one might want to skip some of computations done (like calculating the root hash, which is scrapped)
+  see `form_block/0`
+      Flow:
+        - generates fee-transactions based on the fees paid in the block
+        - wraps up accumulated transactions submissions and fee transactions into a block
+        - triggers db update
+        - pushes the new block to subscribers of `"blocks"` internal event bus topic
   """
   def handle_call({:exec, tx, fees}, _from, state) do
     db_utxos =
@@ -177,23 +197,12 @@ defmodule OMG.State do
     end
   end
 
-  @doc """
-  see `deposit/1`
-  """
   def handle_call({:deposit, deposits}, _from, state) do
     {:ok, db_updates, new_state} = Core.deposit(deposits, state)
 
     {:reply, {:ok, db_updates}, new_state}
   end
 
-  @doc """
-  see `exit_utxos/1`
-
-  Flow:
-    - translates the triggers to UTXO positions digestible by the UTXO set
-    - exits the UTXOs from the ledger if they exists, reports invalidity wherever they don't
-    - returns the `db_updates` to be applied by the caller
-  """
   def handle_call({:exit_utxos, exiting_utxo_triggers}, _from, state) do
     exiting_utxos = Core.extract_exiting_utxo_positions(exiting_utxo_triggers, state)
 
@@ -205,9 +214,6 @@ defmodule OMG.State do
     {:reply, {:ok, db_updates, validities}, new_state}
   end
 
-  @doc """
-  see `utxo_exists/1`
-  """
   def handle_call({:utxo_exists, utxo_pos}, _from, state) do
     db_utxos = fetch_utxos_from_db([utxo_pos], state)
     new_state = Core.with_utxos(state, db_utxos)
@@ -215,22 +221,10 @@ defmodule OMG.State do
     {:reply, Core.utxo_exists?(utxo_pos, new_state), new_state}
   end
 
-  @doc """
-  see `get_status/0`
-  """
   def handle_call(:get_status, _from, state) do
     {:reply, Core.get_status(state), state}
   end
 
-  @doc """
-  see `form_block/0`
-
-  Flow:
-    - generates fee-transactions based on the fees paid in the block
-    - wraps up accumulated transactions submissions and fee transactions into a block
-    - triggers db update
-    - pushes the new block to subscribers of `"blocks"` internal event bus topic
-  """
   def handle_cast(:form_block, state) do
     _ = Logger.info("Forming new block...")
     state = Core.claim_fees(state)

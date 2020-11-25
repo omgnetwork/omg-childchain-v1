@@ -25,7 +25,7 @@ end
 
 contracts = parse_contracts.()
 
-config :logger, level: :warn
+config :logger, level: :warning
 
 config :logger,
   backends: [:console, Sentry.LoggerBackend]
