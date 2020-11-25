@@ -148,14 +148,25 @@ defmodule OMG.Eth.EthereumHeightMonitorTest do
 
   defp pull_client_alarm(_, 0), do: {:cant_match, Alarm.all()}
 
-  defp pull_client_alarm(match, n) do
+  defp pull_client_alarm([], n) do
     case Alarm.all() do
-      ^match ->
+      [] ->
         :ok
 
       _ ->
         Process.sleep(50)
-        pull_client_alarm(match, n - 1)
+        pull_client_alarm([], n - 1)
+    end
+  end
+
+  defp pull_client_alarm([match], n) do
+    case Enum.any?(Alarm.all(), fn x -> x == match end) do
+      true ->
+        :ok
+
+      _ ->
+        Process.sleep(50)
+        pull_client_alarm([match], n - 1)
     end
   end
 

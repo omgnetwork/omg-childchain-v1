@@ -115,8 +115,8 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
       assert {:dont_form_block, new_state} = Core.set_ethereum_status(state, 7, 7000, true)
       assert [%{hash: "8", nonce: 8}, %{hash: "9", nonce: 9}] = Core.get_blocks_to_submit(new_state)
       # still don't want to form blocks
-      assert {:dont_form_block, new_state} = Core.set_ethereum_status(state, 8, 7000, true)
-      assert {:dont_form_block, new_state} = Core.set_ethereum_status(state, 9, 8000, true)
+      assert {:dont_form_block, _new_state} = Core.set_ethereum_status(state, 8, 7000, true)
+      assert {:dont_form_block, _new_state} = Core.set_ethereum_status(state, 9, 8000, true)
     end
 
     test "Recovers after restart even when only empty blocks were mined" do
@@ -346,7 +346,7 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
     end
 
     test "if Ethereum progressed to no later where last enqueue happened, don't ask to form", %{empty: empty} do
-      assert {:dont_form_block, queue} =
+      assert {:dont_form_block, _queue} =
                empty
                |> Core.set_ethereum_status(0, 0, false)
                |> elem(1)
