@@ -82,8 +82,8 @@ defmodule OMG.EthereumEventListener.Core do
         # if sync_guide.sync_height has applied margin (reorg protection)
         # the only thing we need to be aware of is that we don't go pass that!
         # but we want to move as fast as possible so we try to fetch as much as we can (request_max_size)
-
-        next_upper_bound = min(sync_guide.sync_height, state.synced_height + 1 + state.request_max_size)
+        first_not_visited = state.synced_height + 1
+        next_upper_bound = min(sync_guide.sync_height, first_not_visited + state.request_max_size)
 
         {:get_events, {state.synced_height + 1, next_upper_bound}, %{state | synced_height: next_upper_bound}}
     end

@@ -38,13 +38,15 @@ defmodule OMG.EthereumEventListener.CoreTest do
     |> assert_range({1, 10})
   end
 
-  test "max request size is ignored if above allowed sync_height" do
+  test "event range is capped at the SyncGuide sync_height" do
+    # if request_max_size would taken into account it would
+    # push the event range above the treshold and would remove the reorg protection
     create_state(0, request_max_size: 2)
     |> Core.get_events_range(%SyncGuide{sync_height: 1, root_chain_height: 10})
     |> assert_range({1, 1})
   end
 
-  test "max request size ignored if caller is insisting to get a lot of events" do
+  test "get events range is capped at request_max_size and the events range returned is less then SyncGuide sync_height" do
     create_state(0, request_max_size: 2)
     |> Core.get_events_range(%SyncGuide{sync_height: 4, root_chain_height: 10})
     |> assert_range({1, 3})
