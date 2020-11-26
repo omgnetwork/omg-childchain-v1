@@ -338,19 +338,6 @@ defmodule OMG.ChildChain.BlockQueue.Core do
     process_nonce_too_low(submission, newest_mined_blknum)
   end
 
-  # ganache has this error, but these are valid nonce_too_low errors, that just don't make any sense
-  # `process_nonce_too_low/2` would mark it as a genuine failure and crash the BlockQueue :(
-  # however, everything seems to just work regardless, things get retried and mined eventually
-  # NOTE: we decide to degrade the severity to warn and continue, considering it's just `ganache`
-  def process_submit_result(
-        _submission,
-        {:error, %{"code" => -32_000, "data" => %{"stack" => "n: the tx doesn't have the correct nonce" <> _}}} = error,
-        _newest_mined_blknum
-      ) do
-    log_ganache_nonce_too_low(error)
-    :ok
-  end
-
   # Fallback for unknown server errors: https://eth.wiki/json-rpc/json-rpc-error-codes-improvement-proposal
   # Only server errors are handled as they are the only set of errors that we have no control of.
   # Returns `:ok` so that BlockQueue can continue and do a retry, similar to a low replacement price error.
@@ -465,20 +452,14 @@ defmodule OMG.ChildChain.BlockQueue.Core do
 
   # Updates the state with information about last parent height and mined child block number
   @spec update_last_checked_mined_block_num(Core.t()) :: Core.t()
-  defp update_last_checked_mined_block_num(
-         %Core{
-           parent_height: parent_height,
-           mined_child_block_num: mined_child_block_num,
-           gas_price_adj_params: %GasPriceAdjustment{
-             last_block_mined: {_lastechecked_parent_height, lastchecked_mined_block_num}
-           }
-         } = state
-       ) do
-    if lastchecked_mined_block_num < mined_child_block_num do
+  defp update_last_checked_mined_block_num(state) do
+    {_, lastchecked_mined_block_num} = state.gas_price_adj_params.last_block_mined
+
+    if lastchecked_mined_block_num < state.mined_child_block_num do
       %Core{
         state
         | gas_price_adj_params:
-            GasPriceAdjustment.with(state.gas_price_adj_params, parent_height, mined_child_block_num)
+            GasPriceAdjustment.with(state.gas_price_adj_params, state.parent_height, state.mined_child_block_num)
       }
     else
       state
@@ -505,31 +486,24 @@ defmodule OMG.ChildChain.BlockQueue.Core do
   defp next_blknum_to_mine(%{mined_child_block_num: mined, child_block_interval: interval}), do: mined + interval
 
   @spec to_mined_block_filter(Core.t()) :: ({pos_integer, BlockSubmission.t()} -> boolean)
-  defp to_mined_block_filter(%{formed_child_block_num: formed} = state),
-    do: fn {blknum, _} -> next_blknum_to_mine(state) <= blknum and blknum <= formed end
+  defp to_mined_block_filter(state) do
+    fn {blknum, _} -> next_blknum_to_mine(state) <= blknum and blknum <= state.formed_child_block_num end
+  end
 
   @spec should_form_block?(Core.t(), boolean()) :: boolean()
-  defp should_form_block?(
-         %Core{
-           parent_height: parent_height,
-           last_enqueued_block_at_height: last_enqueued_block_at_height,
-           block_submit_every_nth: block_submit_every_nth,
-           wait_for_enqueue: wait_for_enqueue
-         },
-         is_empty_block
-       ) do
+  defp should_form_block?(state, is_empty_block) do
     # e.g. if we're at 15th Ethereum block now, last enqueued was at 14th, we're submitting a child chain block on every
     # single Ethereum block (`block_submit_every_nth` == 1), then we could form a new block (`it_is_time` is `true`)
-    it_is_time = parent_height - last_enqueued_block_at_height >= block_submit_every_nth
-    should_form_block = it_is_time and !wait_for_enqueue and !is_empty_block
+    it_is_time = state.parent_height - state.last_enqueued_block_at_height >= state.block_submit_every_nth
+    should_form_block = it_is_time and !state.wait_for_enqueue and !is_empty_block
 
     _ =
       if !should_form_block do
         log_data = %{
-          parent_height: parent_height,
-          last_enqueued_block_at_height: last_enqueued_block_at_height,
-          block_submit_every_nth: block_submit_every_nth,
-          wait_for_enqueue: wait_for_enqueue,
+          parent_height: state.parent_height,
+          last_enqueued_block_at_height: state.last_enqueued_block_at_height,
+          block_submit_every_nth: state.block_submit_every_nth,
+          wait_for_enqueue: state.wait_for_enqueue,
           it_is_time: it_is_time,
           is_empty_block: is_empty_block
         }
@@ -566,7 +540,7 @@ defmodule OMG.ChildChain.BlockQueue.Core do
     with :ok <- block_number_and_hash_valid?(top_mined_hash, state.mined_child_block_num, hashes) do
       {mined_blocks, fresh_blocks} = split_existing_blocks(state, hashes)
 
-      mined_submissions =
+      blocks =
         for {num, hash} <- mined_blocks do
           {num,
            %BlockSubmission{
@@ -575,7 +549,8 @@ defmodule OMG.ChildChain.BlockQueue.Core do
              nonce: calc_nonce(num, state.child_block_interval)
            }}
         end
-        |> Map.new()
+
+      mined_submissions = Map.new(blocks)
 
       state = %{
         state
@@ -591,9 +566,10 @@ defmodule OMG.ChildChain.BlockQueue.Core do
 
   # splits into ones that are before top_mined_hash and those after
   # mined are zipped with their numbers to submit
-  defp split_existing_blocks(%__MODULE__{mined_child_block_num: blknum}, blknums_and_hashes) do
+  defp split_existing_blocks(state, blknums_and_hashes) do
     {mined, fresh} =
-      Enum.find_index(blknums_and_hashes, &(elem(&1, 0) == blknum))
+      blknums_and_hashes
+      |> Enum.find_index(&(elem(&1, 0) == state.mined_child_block_num))
       |> case do
         nil -> {[], blknums_and_hashes}
         index -> Enum.split(blknums_and_hashes, index + 1)
@@ -618,13 +594,6 @@ defmodule OMG.ChildChain.BlockQueue.Core do
   defp validate_block_hash(expected, {_blknum, blkhash}) when expected == blkhash, do: :ok
   defp validate_block_hash(_, nil), do: {:error, :mined_blknum_not_found_in_db}
   defp validate_block_hash(_, _), do: {:error, :hashes_dont_match}
-
-  defp log_ganache_nonce_too_low(error) do
-    # runtime sanity check if we're actually running `ganache`, if we aren't and we're here, we must crash
-    :ganache = Application.fetch_env!(:omg_eth, :eth_node)
-    _ = Logger.warn(inspect(error))
-    :ok
-  end
 
   defp log_success(submission, txhash) do
     _ = Logger.info("Submitted #{inspect(submission)} at: #{inspect(txhash)}")
@@ -663,7 +632,9 @@ defmodule OMG.ChildChain.BlockQueue.Core do
   end
 
   defp prepare_diagnostic(submission, newest_mined_blknum) do
-    config = Application.get_all_env(:omg_eth) |> Keyword.take([:contract_addr, :authority_address, :txhash_contract])
+    config =
+      :omg_eth |> Application.get_all_env() |> Keyword.take([:contract_addr, :authority_address, :txhash_contract])
+
     %{submission: submission, newest_mined_blknum: newest_mined_blknum, config: config}
   end
 end

@@ -58,7 +58,7 @@ defmodule OMG.Utils.HttpRPC.Validator.Base do
     opts
     |> replace_aliases()
     |> Enum.reduce(
-      map |> get(key),
+      get(map, key),
       &validate/2
     )
     |> case do
