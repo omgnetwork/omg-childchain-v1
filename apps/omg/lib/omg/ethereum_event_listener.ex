@@ -158,11 +158,11 @@ defmodule OMG.EthereumEventListener do
   end
 
   # see `handle_info/2`, clause for `:sync`
-  @decorate span(service: :ethereum_event_listener, type: :backend, name: "sync_height/2")
+  @decorate span(service: :ethereum_event_listener, type: :backend, name: "sync_height/3")
   defp sync_height(state, callbacks, sync_guide) do
     {events, new_state} =
       state
-      |> Core.get_events_range(sync_guide)
+      |> Core.calc_events_range_set_height(sync_guide)
       |> get_events(callbacks.get_ethereum_events_callback)
 
     db_update = [{:put, new_state.synced_height_update_key, new_state.synced_height}]
@@ -176,7 +176,7 @@ defmodule OMG.EthereumEventListener do
     new_state
   end
 
-  defp get_events({:get_events, {from, to}, state}, get_events_callback) do
+  defp get_events({{from, to}, state}, get_events_callback) do
     {:ok, new_events} = get_events_callback.(from, to)
     {new_events, state}
   end

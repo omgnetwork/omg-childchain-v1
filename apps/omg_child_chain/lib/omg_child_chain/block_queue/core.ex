@@ -486,8 +486,8 @@ defmodule OMG.ChildChain.BlockQueue.Core do
   defp next_blknum_to_mine(%{mined_child_block_num: mined, child_block_interval: interval}), do: mined + interval
 
   @spec to_mined_block_filter(Core.t()) :: ({pos_integer, BlockSubmission.t()} -> boolean)
-  defp to_mined_block_filter(%{formed_child_block_num: formed} = state) do
-    fn {blknum, _} -> next_blknum_to_mine(state) <= blknum and blknum <= formed end
+  defp to_mined_block_filter(state) do
+    fn {blknum, _} -> next_blknum_to_mine(state) <= blknum and blknum <= state.formed_child_block_num end
   end
 
   @spec should_form_block?(Core.t(), boolean()) :: boolean()

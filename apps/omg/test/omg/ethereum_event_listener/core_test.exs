@@ -24,53 +24,53 @@ defmodule OMG.EthereumEventListener.CoreTest do
   @service_name :name
   @request_max_size 5
 
-  test "will respect request_max_size if its allowed!" do
+  test "respects request_max_size argument" do
     create_state(0, request_max_size: 10)
-    |> Core.get_events_range(%SyncGuide{sync_height: 20, root_chain_height: 10})
-    |> assert_range({1, 11})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 20, root_chain_height: 10})
+    |> assert_range({1, 10})
 
     create_state(0, request_max_size: 10)
-    |> Core.get_events_range(%SyncGuide{sync_height: 11, root_chain_height: 10})
-    |> assert_range({1, 11})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 11, root_chain_height: 10})
+    |> assert_range({1, 10})
 
     create_state(0, request_max_size: 10)
-    |> Core.get_events_range(%SyncGuide{sync_height: 10, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 10, root_chain_height: 10})
     |> assert_range({1, 10})
   end
 
   test "event range is capped at the SyncGuide sync_height" do
-    # if request_max_size would taken into account it would
-    # push the event range above the treshold and would remove the reorg protection
+    # if request_max_size is taken into account it would
+    # push the event range above the threshold  and would remove the reorg protection
     create_state(0, request_max_size: 2)
-    |> Core.get_events_range(%SyncGuide{sync_height: 1, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 1, root_chain_height: 10})
     |> assert_range({1, 1})
   end
 
   test "get events range is capped at request_max_size and the events range returned is less then SyncGuide sync_height" do
     create_state(0, request_max_size: 2)
-    |> Core.get_events_range(%SyncGuide{sync_height: 4, root_chain_height: 10})
-    |> assert_range({1, 3})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 4, root_chain_height: 10})
+    |> assert_range({1, 2})
   end
 
   test "works well close to zero" do
     0
     |> create_state()
-    |> Core.get_events_range(%SyncGuide{sync_height: 1, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 1, root_chain_height: 10})
     |> assert_range({1, 1})
-    |> Core.get_events_range(%SyncGuide{sync_height: 8, root_chain_height: 10})
-    |> assert_range({2, 7})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 8, root_chain_height: 10})
+    |> assert_range({2, 6})
 
     0
     |> create_state()
-    |> Core.get_events_range(%SyncGuide{sync_height: 9, root_chain_height: 10})
-    |> assert_range({1, 6})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 9, root_chain_height: 10})
+    |> assert_range({1, 5})
   end
 
   test "always returns correct height to check in" do
     state =
       0
       |> create_state()
-      |> Core.get_events_range(%SyncGuide{sync_height: 1, root_chain_height: 10})
+      |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 1, root_chain_height: 10})
       |> assert_range({1, 1})
 
     assert state.synced_height == 1
@@ -79,13 +79,13 @@ defmodule OMG.EthereumEventListener.CoreTest do
   test "produces next ethereum height range to get events from" do
     0
     |> create_state()
-    |> Core.get_events_range(%SyncGuide{sync_height: 5, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 5, root_chain_height: 10})
     |> assert_range({1, 5})
-    |> Core.get_events_range(%SyncGuide{sync_height: 5, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 5, root_chain_height: 10})
     |> assert_range(:dont_fetch_events)
-    |> Core.get_events_range(%SyncGuide{sync_height: 7, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 7, root_chain_height: 10})
     |> assert_range({6, 7})
-    |> Core.get_events_range(%SyncGuide{sync_height: 7, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 7, root_chain_height: 10})
     |> assert_range(:dont_fetch_events)
   end
 
@@ -93,67 +93,67 @@ defmodule OMG.EthereumEventListener.CoreTest do
     # doesn't make too much sense, but still should work well
     0
     |> create_state()
-    |> Core.get_events_range(%SyncGuide{sync_height: 5, root_chain_height: 5})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 5, root_chain_height: 5})
     |> assert_range({1, 5})
-    |> Core.get_events_range(%SyncGuide{sync_height: 7, root_chain_height: 5})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 7, root_chain_height: 5})
     |> assert_range({6, 7})
   end
 
   test "will be eager to get more events, even if none are pulled at first. All will be returned" do
     0
     |> create_state()
-    |> Core.get_events_range(%SyncGuide{sync_height: 2, root_chain_height: 2})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 2, root_chain_height: 2})
     |> assert_range({1, 2})
-    |> Core.get_events_range(%SyncGuide{sync_height: 4, root_chain_height: 4})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 4, root_chain_height: 4})
     |> assert_range({3, 4})
   end
 
   test "restart allows to continue with proper bounds" do
     1
     |> create_state()
-    |> Core.get_events_range(%SyncGuide{sync_height: 4, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 4, root_chain_height: 10})
     |> assert_range({2, 4})
-    |> Core.get_events_range(%SyncGuide{sync_height: 4, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 4, root_chain_height: 10})
     |> assert_range(:dont_fetch_events)
-    |> Core.get_events_range(%SyncGuide{sync_height: 5, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 5, root_chain_height: 10})
     |> assert_range({5, 5})
 
     3
     |> create_state()
-    |> Core.get_events_range(%SyncGuide{sync_height: 3, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 3, root_chain_height: 10})
     |> assert_range(:dont_fetch_events)
-    |> Core.get_events_range(%SyncGuide{sync_height: 5, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 5, root_chain_height: 10})
     |> assert_range({4, 5})
 
     3
     |> create_state()
-    |> Core.get_events_range(%SyncGuide{sync_height: 7, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 7, root_chain_height: 10})
     |> assert_range({4, 7})
   end
 
   test "wont move over if not allowed by sync_height" do
     5
     |> create_state()
-    |> Core.get_events_range(%SyncGuide{sync_height: 6, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 6, root_chain_height: 10})
     |> assert_range({6, 6})
   end
 
   test "can get an empty events list when events too fresh" do
     4
     |> create_state()
-    |> Core.get_events_range(%SyncGuide{sync_height: 6, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 6, root_chain_height: 10})
     |> assert_range({5, 6})
   end
 
   test "persists/checks in eth_height without margins substracted, and never goes negative" do
     create_state(0, request_max_size: 10)
-    |> Core.get_events_range(%SyncGuide{sync_height: 6, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 6, root_chain_height: 10})
     |> assert_range({1, 6})
   end
 
   test "tolerates being asked to sync on height already synced" do
     create_state(5)
-    |> Core.get_events_range(%SyncGuide{sync_height: 1, root_chain_height: 10})
+    |> Core.calc_events_range_set_height(%SyncGuide{sync_height: 1, root_chain_height: 10})
     |> assert_range(:dont_fetch_events)
   end
 
@@ -172,13 +172,8 @@ defmodule OMG.EthereumEventListener.CoreTest do
     state
   end
 
-  defp assert_range({:get_events, range, state}, expect) do
+  defp assert_range({range, state}, expect) do
     assert range == expect
-    state
-  end
-
-  defp assert_range({:dont_fetch_events, state}, expect) do
-    assert :dont_fetch_events == expect
     state
   end
 end

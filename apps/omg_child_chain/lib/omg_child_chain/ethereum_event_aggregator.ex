@@ -74,7 +74,7 @@ defmodule OMG.ChildChain.EthereumEventAggregator do
     {:ok,
      %{
        # 200 blocks of events will be kept in memory
-       delete_events_threshold_height_blknum: 1000,
+       delete_events_threshold_ethereum_block_height: 1000,
        ets_bucket: ets_bucket,
        event_signatures: events_signatures,
        events: events,
@@ -213,8 +213,10 @@ defmodule OMG.ChildChain.EthereumEventAggregator do
     # block_number <= new_height - delete_events_threshold -> true end)
     match_spec = [
       {{:"$1", :"$2", :"$3"},
-       [{:"=<", :"$1", {:-, {:const, new_height_blknum}, {:const, state.delete_events_threshold_height_blknum}}}],
-       [true]}
+       [
+         {:"=<", :"$1",
+          {:-, {:const, new_height_blknum}, {:const, state.delete_events_threshold_ethereum_block_height}}}
+       ], [true]}
     ]
 
     :ets.select_delete(state.ets_bucket, match_spec)

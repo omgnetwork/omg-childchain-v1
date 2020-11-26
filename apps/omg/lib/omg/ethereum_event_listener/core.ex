@@ -70,10 +70,17 @@ defmodule OMG.EthereumEventListener.Core do
     {initial_state, last_synced_ethereum_height}
   end
 
-  @decorate span(service: :ethereum_event_listener, type: :backend, name: "get_events_range_for_download/2")
-  @spec get_events_range(t(), SyncGuide.t()) ::
-          {:dont_fetch_events, t()} | {:get_events, {non_neg_integer, non_neg_integer}, t()}
-  def get_events_range(state, sync_guide) do
+  @doc """
+  Returns the events range -
+  - from (inclusive!),
+  - to (inclusive!)
+  that needs to be scraped and sets synced_height in the state.
+
+  """
+  @decorate span(service: :ethereum_event_listener, type: :backend, name: "calc_events_range_set_height/2")
+  @spec calc_events_range_set_height(t(), SyncGuide.t()) ::
+          {:dont_fetch_events, t()} | {{non_neg_integer, non_neg_integer}, t()}
+  def calc_events_range_set_height(state, sync_guide) do
     case sync_guide.sync_height <= state.synced_height do
       true ->
         {:dont_fetch_events, state}
@@ -83,9 +90,12 @@ defmodule OMG.EthereumEventListener.Core do
         # the only thing we need to be aware of is that we don't go pass that!
         # but we want to move as fast as possible so we try to fetch as much as we can (request_max_size)
         first_not_visited = state.synced_height + 1
-        next_upper_bound = min(sync_guide.sync_height, first_not_visited + state.request_max_size)
+        # if first not visited = 1, and request max size is 10
+        # it means we can scrape AT MOST request_max_size events
+        max_height = state.request_max_size - 1
+        upper_bound = min(sync_guide.sync_height, first_not_visited + max_height)
 
-        {:get_events, {state.synced_height + 1, next_upper_bound}, %{state | synced_height: next_upper_bound}}
+        {{first_not_visited, upper_bound}, %{state | synced_height: upper_bound}}
     end
   end
 end
