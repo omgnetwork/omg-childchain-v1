@@ -58,7 +58,7 @@ defmodule OMG.ChildChain.Supervisor do
          metrics_collection_interval: metrics_collection_interval
        ]},
       {BlocksCache, [ets: blocks_cache()]},
-      #  {FeeServer, fee_server_opts},
+      {FeeServer, fee_server_opts},
       {Monitor,
        [
          Alarm,
