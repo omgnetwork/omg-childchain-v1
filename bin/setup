@@ -131,6 +131,4 @@ fancy_echo "Installing elixir dependencies."
 mix local.hex --force
 mix local.rebar --force
 
-mix deps.get
-
 fancy_echo "You're all set!"
