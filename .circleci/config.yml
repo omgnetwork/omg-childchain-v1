@@ -184,9 +184,6 @@ jobs:
             - ~/.asdf-vm
       - run: make init_test
       - run:
-          command: ./bin/rocksdb
-          no_output_timeout: 2400
-      - run:
           command: ./bin/setup
           no_output_timeout: 2400
       - run: make deps-elixir-omg
