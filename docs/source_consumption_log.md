@@ -36,7 +36,6 @@ fake_server 2.1.0       -> Apache 2.0
 hackney 1.15.1          -> Apache 2
 httpoison 1.6.0         -> MIT
 idna 5.1.1              -> BSD
-libsecp256k1 0.1.9      -> MIT
 licensir 0.2.7          -> MIT
 merkle_patricia_tree 0.2.6-> MIT
 merkle_tree 1.5.0       -> MIT
