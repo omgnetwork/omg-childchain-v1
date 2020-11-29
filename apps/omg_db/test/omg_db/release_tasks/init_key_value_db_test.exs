@@ -57,7 +57,7 @@ defmodule OMG.DB.ReleaseTasks.InitKeyValueDBTest do
     :ok = __MODULE__.System.put_env("DB_PATH", dir)
 
     _ = SetKeyValueDB.load([], release: :child_chain, system_adapter: __MODULE__.System)
-    _ = InitKeyValueDB.run()
+    :ok = InitKeyValueDB.run()
 
     {:error, _} = InitKeyValueDB.run()
     _ = File.rm_rf!(dir)
