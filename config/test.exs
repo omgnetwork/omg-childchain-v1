@@ -25,7 +25,7 @@ end
 
 contracts = parse_contracts.()
 
-config :logger, level: :warn
+config :logger, level: :warning
 
 config :logger,
   backends: [:console, Sentry.LoggerBackend]
@@ -93,7 +93,7 @@ config :omg_eth,
     payment_exit_game: contracts["CONTRACT_ADDRESS_PAYMENT_EXIT_GAME"],
     plasma_framework: contracts["CONTRACT_ADDRESS_PLASMA_FRAMEWORK"]
   },
-  node_logging_in_debug: true,
+  node_logging_in_debug: false,
   # Lower the event check interval too low and geth will die
   ethereum_events_check_interval_ms: 400,
   min_exit_period_seconds: 22,

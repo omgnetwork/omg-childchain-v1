@@ -285,7 +285,7 @@ defmodule OMG.State.Transaction.RecoveredTest do
     test "transactions with corrupt signatures don't do harm - one signature", %{alice: alice} do
       full_signed_tx = TestHelper.create_signed([{1, 2, 3, alice}], @eth, [{alice, 7}])
 
-      assert {:error, :signature_corrupt} ==
+      assert {:error, "recovery_id_not_u8"} ==
                %Transaction.Signed{full_signed_tx | sigs: [<<1::size(520)>>]}
                |> Transaction.Signed.encode()
                |> Transaction.Recovered.recover_from()
@@ -296,12 +296,12 @@ defmodule OMG.State.Transaction.RecoveredTest do
       full_signed_tx = TestHelper.create_signed([{1, 2, 3, alice}, {1, 2, 4, alice}], @eth, [{alice, 7}])
       %Transaction.Signed{sigs: [sig1, sig2 | _]} = full_signed_tx
 
-      assert {:error, :signature_corrupt} ==
+      assert {:error, "recovery_id_not_u8"} ==
                %Transaction.Signed{full_signed_tx | sigs: [sig1, <<1::size(520)>>]}
                |> Transaction.Signed.encode()
                |> Transaction.Recovered.recover_from()
 
-      assert {:error, :signature_corrupt} ==
+      assert {:error, "recovery_id_not_u8"} ==
                %Transaction.Signed{full_signed_tx | sigs: [<<1::size(520)>>, sig2]}
                |> Transaction.Signed.encode()
                |> Transaction.Recovered.recover_from()

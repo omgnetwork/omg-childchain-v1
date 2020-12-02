@@ -78,8 +78,7 @@ defmodule OMG.ChildChain.MonitorTest do
     assert_receive {:trace, ^monitor_pid, :receive, {:"$gen_cast", :start_child}}
     :erlang.trace(monitor_pid, false, [:receive])
     # we now assert that our child was re-attached to the monitor
-    {:links, children} = Process.info(monitor_pid, :links)
-    assert Enum.count(children) == 1
+    assert_links(monitor_pid, 1)
   end
 
   test "that a child process does not get restarted if an alarm is cleared but it was not down" do
@@ -119,6 +118,27 @@ defmodule OMG.ChildChain.MonitorTest do
 
     def terminate(_reason, _) do
       :ok
+    end
+  end
+
+  def assert_links(pid, expect_children) do
+    assert_links(pid, expect_children, 5)
+  end
+
+  defp assert_links(_pid, _expect_children, 0) do
+    assert false
+  end
+
+  defp assert_links(pid, expect_children, index) do
+    {:links, children} = Process.info(pid, :links)
+
+    case Enum.count(children) do
+      ^expect_children ->
+        assert true
+
+      _ ->
+        Process.sleep(10)
+        assert_links(pid, expect_children, index - 1)
     end
   end
 end

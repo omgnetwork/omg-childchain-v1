@@ -41,7 +41,6 @@ defmodule OMG.ChildChain.BlockQueue do
 
   use OMG.Utils.LoggerExt
 
-  alias OMG.Block
   alias OMG.ChildChain.BlockQueue.Balance
   alias OMG.ChildChain.BlockQueue.Core
   alias OMG.ChildChain.BlockQueue.Core.BlockSubmission
@@ -154,10 +153,14 @@ defmodule OMG.ChildChain.BlockQueue do
   end
 
   @doc """
-  Checks the status of the Ethereum root chain, the top mined child block number
+  check_ethereum_status- Checks the status of the Ethereum root chain, the top mined child block number
   and status of State to decide what to do.
 
   `OMG.ChildChain.BlockQueue.Core` decides whether a new block should be formed or not.
+
+
+  {:internal_event_bus, :enqueue_block, %Block{}} -  Lines up a new block for submission. Presumably `OMG.State.form_block` wrote to the `:internal_event_bus` having
+  formed a new child chain block.
   """
   def handle_info(:check_ethereum_status, state) do
     {:ok, ethereum_height} = EthereumHeight.get()
@@ -181,11 +184,7 @@ defmodule OMG.ChildChain.BlockQueue do
     {:noreply, state1}
   end
 
-  @doc """
-  Lines up a new block for submission. Presumably `OMG.State.form_block` wrote to the `:internal_event_bus` having
-  formed a new child chain block.
-  """
-  def handle_info({:internal_event_bus, :enqueue_block, %Block{} = block}, state) do
+  def handle_info({:internal_event_bus, :enqueue_block, block}, state) do
     {:ok, parent_height} = EthereumHeight.get()
     state1 = Core.enqueue_block(state, block.hash, block.number, parent_height)
     _ = Logger.info("Enqueuing block num '#{inspect(block.number)}', hash '#{inspect(Encoding.to_hex(block.hash))}'")
@@ -194,8 +193,6 @@ defmodule OMG.ChildChain.BlockQueue do
     {:noreply, state1}
   end
 
-  @doc false
-  # Ignore unrelated events
   def handle_info({:internal_event_bus, :block_submitting, _}, state), do: {:noreply, state}
   def handle_info({:internal_event_bus, :block_submitted, _}, state), do: {:noreply, state}
 
