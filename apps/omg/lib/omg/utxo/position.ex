@@ -174,13 +174,14 @@ defmodule OMG.Utxo.Position do
   end
 
   defp do_decode(encoded) when is_binary(encoded) do
-    with {:ok, %ExPlasmaOutput{output_id: %{blknum: blknum, txindex: txindex, oindex: oindex}}} <-
-           ExPlasmaOutput.decode_id(encoded),
-         do: {:ok, Utxo.position(blknum, txindex, oindex)}
+    {:ok, %ExPlasmaOutput{output_id: %{blknum: blknum, txindex: txindex, oindex: oindex}}} =
+      ExPlasmaOutput.decode_id(encoded)
+
+    {:ok, Utxo.position(blknum, txindex, oindex)}
   end
 
   defp do_decode(encoded) when is_integer(encoded) do
-    with {:ok, utxo} <- ExPlasmaPosition.to_map(encoded),
-         do: {:ok, Utxo.position(utxo.blknum, utxo.txindex, utxo.oindex)}
+    {:ok, utxo} = ExPlasmaPosition.to_map(encoded)
+    {:ok, Utxo.position(utxo.blknum, utxo.txindex, utxo.oindex)}
   end
 end
