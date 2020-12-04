@@ -20,7 +20,9 @@ defmodule OMG.Eth.Blockchain.BitHelper do
 
   use Bitwise
 
-  @type keccak_hash :: binary()
+  alias ExPlasma.Crypto
+
+  @type keccak_hash() :: Crypto.hash_t()
 
   @doc """
   Returns the keccak sha256 of a given input.
@@ -39,7 +41,7 @@ defmodule OMG.Eth.Blockchain.BitHelper do
   """
   @spec kec(binary()) :: keccak_hash
   def kec(data) do
-    :keccakf1600.sha3_256(data)
+    Crypto.keccak_hash(data)
   end
 
   @doc """

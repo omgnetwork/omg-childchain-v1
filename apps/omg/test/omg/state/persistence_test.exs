@@ -166,7 +166,7 @@ defmodule OMG.State.PersistenceTest do
     :ok = restart_state()
 
     assert {:ok, [db_block]} = OMG.DB.blocks([hash])
-    assert %Block{transactions: [_payment_tx, eth_fee_tx]} = Block.from_db_value(db_block)
+    assert %Block{transactions: [_payment_tx, _eth_fee_tx]} = Block.from_db_value(db_block)
 
     assert OMG.State.utxo_exists?(Utxo.position(1000, 1, 0))
   end

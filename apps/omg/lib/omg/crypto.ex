@@ -20,6 +20,7 @@ defmodule OMG.Crypto do
   For unsafe code, limited to `:test` and `:dev` environments and related to private key handling refer to:
   `OMG.DevCrypto` in `test/support`
   """
+  alias ExPlasma.Crypto
   alias OMG.Signature
 
   @type sig_t() :: <<_::520>>
@@ -32,8 +33,6 @@ defmodule OMG.Crypto do
   @doc """
   Produces a KECCAK digest for the message.
 
-  see https://hexdocs.pm/exth_crypto/ExthCrypto.Hash.html#kec/0
-
   ## Example
 
     iex> OMG.Crypto.hash("omg!")
@@ -41,7 +40,7 @@ defmodule OMG.Crypto do
       171, 76, 106, 229, 69, 102, 203, 7, 21, 134, 230, 92, 23, 209, 187, 12>>
   """
   @spec hash(binary) :: hash_t()
-  def hash(message), do: ExthCrypto.Hash.hash(message, ExthCrypto.Hash.kec())
+  def hash(message), do: Crypto.keccak_hash(message)
 
   @doc """
   Recovers the address of the signer from a binary-encoded signature.

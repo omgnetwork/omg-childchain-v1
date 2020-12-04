@@ -51,6 +51,13 @@ defmodule OMG.ChildChain.EthereumEventAggregator do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
   end
 
+  defstruct delete_events_threshold_ethereum_block_height: 1000,
+            ets_bucket: nil,
+            event_signatures: [],
+            events: [],
+            contracts: [],
+            rpc: nil
+
   def init(opts) do
     contracts = opts |> Keyword.fetch!(:contracts) |> Map.values() |> Enum.map(&from_hex(&1))
     # events = [[signature: "ExitStarted(address,uint160)", name: :exit_started, enrich: true],..]
@@ -72,8 +79,8 @@ defmodule OMG.ChildChain.EthereumEventAggregator do
     rpc = Keyword.get(opts, :rpc, Rpc)
 
     {:ok,
-     %{
-       # 200 blocks of events will be kept in memory
+     %__MODULE__{
+       # 1000 blocks of events will be kept in memory
        delete_events_threshold_ethereum_block_height: 1000,
        ets_bucket: ets_bucket,
        event_signatures: events_signatures,

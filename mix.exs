@@ -73,7 +73,6 @@ defmodule OMG.Umbrella.MixProject do
         git: "https://github.com/omisego/ex_unit_fixtures.git", branch: "feature/require_files_not_load", only: [:test]
       },
       {:ex_doc, "~> 0.20.2", only: :dev, runtime: false},
-      {:libsecp256k1, git: "https://github.com/omisego/libsecp256k1.git", branch: "elixir-only", override: true},
       {:spandex, "~> 3.0.2"}
     ]
   end
