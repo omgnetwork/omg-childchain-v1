@@ -17,6 +17,7 @@ defmodule OMG.Eth.RootChainTest do
 
   alias ExPlasma.Builder
   alias ExPlasma.Crypto
+  alias ExPlasma.Transaction.Type.PaymentV1
   alias OMG.Eth.Configuration
   alias OMG.Eth.Encoding
   alias OMG.Eth.RootChain
