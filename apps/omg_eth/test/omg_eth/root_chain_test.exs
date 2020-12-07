@@ -15,6 +15,9 @@
 defmodule OMG.Eth.RootChainTest do
   use ExUnit.Case, async: false
 
+  alias ExPlasma.Builder
+  alias ExPlasma.Crypto
+  alias ExPlasma.Transaction.Type.PaymentV1
   alias OMG.Eth.Configuration
   alias OMG.Eth.Encoding
   alias OMG.Eth.RootChain
@@ -62,25 +65,25 @@ defmodule OMG.Eth.RootChainTest do
   end
 
   defp deposit_then_start_exit(owner, amount, currency) do
-    owner = Encoding.from_hex(owner)
-    {:ok, deposit} = ExPlasma.Transaction.Deposit.new(owner: owner, currency: currency, amount: amount)
-    rlp = ExPlasma.Transaction.encode(deposit)
+    output_guard = Encoding.from_hex(owner)
+    currency = Encoding.from_hex(currency)
+    rlp = deposit_transaction(amount, output_guard, currency)
 
     {:ok, deposit_tx} =
       rlp
-      |> RootChainHelper.deposit(amount, owner)
+      |> RootChainHelper.deposit(amount, output_guard)
       |> DevHelper.transact_sync!()
 
     deposit_txlog = hd(deposit_tx["logs"])
     deposit_blknum = RootChainHelper.deposit_blknum_from_receipt(deposit_tx)
     deposit_txindex = OMG.Eth.Encoding.int_from_hex(deposit_txlog["transactionIndex"])
 
-    utxo_pos = ExPlasma.Utxo.pos(%{blknum: deposit_blknum, txindex: deposit_txindex, oindex: 0})
-    proof = ExPlasma.Encoding.merkle_proof([rlp], 0)
+    utxo_pos = ExPlasma.Output.Position.pos(%{blknum: deposit_blknum, txindex: deposit_txindex, oindex: 0})
+    proof = ExPlasma.Merkle.proof([rlp], 0)
 
     {:ok, start_exit_tx} =
       utxo_pos
-      |> RootChainHelper.start_exit(rlp, proof, owner)
+      |> RootChainHelper.start_exit(rlp, proof, output_guard)
       |> DevHelper.transact_sync!()
 
     {utxo_pos, start_exit_tx}
@@ -89,8 +92,7 @@ defmodule OMG.Eth.RootChainTest do
   defp exit_id_from_receipt(%{"logs" => logs}) do
     topic =
       "ExitStarted(address,uint160)"
-      |> ExKeccak.hash_256()
-      |> elem(1)
+      |> Crypto.keccak_hash()
       |> Encoding.to_hex()
 
     [%{exit_id: exit_id}] =
@@ -109,5 +111,16 @@ defmodule OMG.Eth.RootChainTest do
     add_exit_queue = RootChainHelper.add_exit_queue(1, "0x0000000000000000000000000000000000000000")
 
     {:ok, %{"status" => "0x1"}} = Support.DevHelper.transact_sync!(add_exit_queue)
+  end
+
+  defp deposit_transaction(amount_in_wei, output_guard, currency) do
+    output_guard
+    |> deposit(currency, amount_in_wei)
+    |> ExPlasma.encode!(signed: false)
+  end
+
+  defp deposit(output_guard, token, amount) do
+    output = PaymentV1.new_output(output_guard, token, amount)
+    Builder.new(ExPlasma.payment_v1(), outputs: [output])
   end
 end

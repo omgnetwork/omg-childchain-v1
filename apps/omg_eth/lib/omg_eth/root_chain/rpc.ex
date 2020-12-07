@@ -16,6 +16,7 @@ defmodule OMG.Eth.RootChain.Rpc do
    Does RPC calls for enriching event functions or bare events polling to plasma contracts.
   """
   require Logger
+  alias ExPlasma.Crypto
   alias OMG.Eth.Encoding
 
   def call_contract(client \\ Ethereumex.HttpClient, contract, signature, args) do
@@ -68,8 +69,7 @@ defmodule OMG.Eth.RootChain.Rpc do
 
   defp event_topic_for_signature(signature) do
     signature
-    |> ExKeccak.hash_256()
-    |> elem(1)
+    |> Crypto.keccak_hash()
     |> Encoding.to_hex()
   end
 

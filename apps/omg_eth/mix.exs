@@ -34,6 +34,7 @@ defmodule OMG.Eth.MixProject do
 
   defp deps() do
     [
+      {:ex_plasma, "~> 0.2.0"},
       {:ex_abi, "~> 0.5.1"},
       {:ethereumex, "~> 0.6.0"},
       {:ex_secp256k1, "~> 0.1.2"},
