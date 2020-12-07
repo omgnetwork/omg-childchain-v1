@@ -65,13 +65,13 @@ defmodule OMG.Eth.RootChainTest do
   end
 
   defp deposit_then_start_exit(owner, amount, currency) do
-    owner = Encoding.from_hex(owner)
+    output_guard = Encoding.from_hex(owner)
     currency = Encoding.from_hex(currency)
-    rlp = deposit_transaction(amount, owner, currency)
+    rlp = deposit_transaction(amount, output_guard, currency)
 
     {:ok, deposit_tx} =
       rlp
-      |> RootChainHelper.deposit(amount, owner)
+      |> RootChainHelper.deposit(amount, output_guard)
       |> DevHelper.transact_sync!()
 
     deposit_txlog = hd(deposit_tx["logs"])
@@ -83,7 +83,7 @@ defmodule OMG.Eth.RootChainTest do
 
     {:ok, start_exit_tx} =
       utxo_pos
-      |> RootChainHelper.start_exit(rlp, proof, owner)
+      |> RootChainHelper.start_exit(rlp, proof, output_guard)
       |> DevHelper.transact_sync!()
 
     {utxo_pos, start_exit_tx}
@@ -113,14 +113,14 @@ defmodule OMG.Eth.RootChainTest do
     {:ok, %{"status" => "0x1"}} = Support.DevHelper.transact_sync!(add_exit_queue)
   end
 
-  defp deposit_transaction(amount_in_wei, address, currency) do
-    address
+  defp deposit_transaction(amount_in_wei, output_guard, currency) do
+    output_guard
     |> deposit(currency, amount_in_wei)
     |> ExPlasma.encode!(signed: false)
   end
 
-  defp deposit(owner, token, amount) do
-    output = PaymentV1.new_output(owner, token, amount)
+  defp deposit(output_guard, token, amount) do
+    output = PaymentV1.new_output(output_guard, token, amount)
     Builder.new(ExPlasma.payment_v1(), outputs: [output])
   end
 end
