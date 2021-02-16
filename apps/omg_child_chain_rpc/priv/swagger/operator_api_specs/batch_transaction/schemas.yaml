@@ -1,0 +1,14 @@
+TransactionBatchSubmitSchema:
+  type: array
+    items:
+      type: array
+  properties:
+    blknum:
+      type: integer
+      format: int64
+    txindex:
+      type: integer
+      format: int16
+    txhash:
+      type: string
+

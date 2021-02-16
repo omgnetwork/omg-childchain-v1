@@ -29,6 +29,16 @@ defmodule OMG.ChildChain.API.Transaction do
     result
   end
 
+  @spec submit_batch(binary()) :: ChildChain.submit_result()
+  def submit_batch(txbytes, child_chain \\ ChildChain) do
+    :ok = :telemetry.execute([:submit_batch, __MODULE__], %{})
+
+    result = child_chain.submit_batch(txbytes)
+    _ = send_telemetry(result)
+
+    result
+  end
+
   defp send_telemetry({:ok, _}) do
     :ok = :telemetry.execute([:submit_success, __MODULE__], %{})
   end

@@ -28,4 +28,11 @@ defmodule OMG.ChildChainRPC.Web.Controller.Transaction do
       api_response(details, conn, :submit)
     end
   end
+
+  def submit_batch(conn, params) do
+    with {:ok, txbytes} <- expect(params, "transactions", list: :hex),
+         {:ok, details} <- TransactionAPI.submit_batch(txbytes) do
+      api_response(details, conn, :submit_batch)
+    end
+  end
 end

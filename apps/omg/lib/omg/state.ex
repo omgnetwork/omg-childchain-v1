@@ -70,6 +70,13 @@ defmodule OMG.State do
     GenServer.call(__MODULE__, {:exec, tx, input_fees}, @timeout)
   end
 
+  @spec exec_batch(list({Transaction.Recovered.t(), Fees.optional_fee_t()})) ::
+          {:ok, list({Transaction.tx_hash(), pos_integer, non_neg_integer})}
+          | {:error, exec_error()}
+  def exec_batch(recovered_and_fee_pair) do
+    GenServer.call(__MODULE__, {:exec_batch, recovered_and_fee_pair}, @timeout)
+  end
+
   @doc """
   Intended for the `OMG.ChildChain`. Forms a new block and persist it. Broadcasts the block to the internal event bus
   to be used in other processes.
@@ -195,6 +202,28 @@ defmodule OMG.State do
       {tx_result, new_state} ->
         {:reply, tx_result, new_state}
     end
+  end
+
+  def handle_call({:exec_batch, recovered_and_fee_pair}, _from, state) do
+    db_utxos =
+      Enum.flat_map(recovered_and_fee_pair, fn {tx, _fee} ->
+        tx
+        |> Transaction.get_inputs()
+        |> fetch_utxos_from_db(state)
+      end)
+
+    Enum.flat_map_reduce(recovered_and_fee_pair, state, fn {tx, fees}, acc_state ->
+      acc_state
+      |> Core.with_utxos(db_utxos)
+      |> Core.exec(tx, fees)
+      |> case do
+        {:ok, tx_result, new_state} ->
+          {tx_result, new_state}
+
+        {tx_result, new_state} ->
+          {tx_result, new_state}
+      end
+    end)
   end
 
   def handle_call({:deposit, deposits}, _from, state) do

@@ -46,6 +46,24 @@ defmodule OMG.ChildChain do
     result_with_logging(result)
   end
 
+  @spec submit_batch(list(binary)) :: submit_result()
+  def submit_batch(transactions) do
+    recovered_and_fee_pair =
+      Enum.map(transactions, fn transaction ->
+        with {:ok, recovered_tx} <- Transaction.Recovered.recover_from(transaction),
+             :ok <- is_supported(recovered_tx),
+             {:ok, fees} <- FeeServer.accepted_fees() do
+          # {:ok, %{txhash: tx_hash, blknum: blknum, txindex: tx_index}}
+          fees = Fees.for_transaction(recovered_tx, fees)
+          {recovered_tx, fees}
+        end
+      end)
+
+    {:ok, responses} = State.exec_batch(recovered_and_fee_pair)
+    # responses = [{tx_hash, blknum, tx_index}, ...]
+    result_with_logging(responses)
+  end
+
   @spec get_filtered_fees(list(pos_integer()), list(String.t()) | nil) ::
           {:ok, Fees.full_fee_t()} | {:error, :currency_fee_not_supported}
   def get_filtered_fees(tx_types, currencies) do
