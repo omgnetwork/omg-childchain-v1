@@ -7,10 +7,11 @@ TransactionBatchSubmitBodySchema:
         title: 'TransactionBatchSubmitBodySchema'
         type: object
         properties:
-          transaction:
+          transactions:
             type: array
-
+            items:
+              type: string
         required:
-          - transaction
+          - transactions
         example:
           transactions: ['0xf8d083015ba98080808080940000...', '0xf8d083a15ba98080808080920000...']
