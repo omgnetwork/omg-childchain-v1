@@ -301,13 +301,13 @@ cabbage-reorgs-logs:
 cabbage-start-services:
 	make init_test && \
         cp ./localchain_contract_addresses.env ./priv/cabbage/apps/itest/localchain_contract_addresses.env && \
-	docker-compose -f docker-compose.yml -f docker-compose.feefeed.yml -f docker-compose.specs.yml up -d || \
+	docker-compose -f docker-compose.yml -f docker-compose.specs.yml up -d || \
 	(START_RESULT=$?; docker-compose logs; exit $START_RESULT;)
 
 cabbage-start-services-reorg:
 	make init_test_reorg && \
 	cp ./localchain_contract_addresses.env ./priv/cabbage/apps/itest/localchain_contract_addresses.env && \
-	docker-compose -f docker-compose.yml -f docker-compose.feefeed.yml -f docker-compose.reorg.yml -f docker-compose.specs.yml up -d || \
+	docker-compose -f docker-compose.yml -f docker-compose.reorg.yml -f docker-compose.specs.yml up -d || \
 	(START_RESULT=$?; docker-compose logs; exit $START_RESULT;)
 
 
@@ -358,7 +358,7 @@ docker-remote-childchain:
 ###
 start-services:
 	SNAPSHOT=SNAPSHOT_MIX_EXIT_PERIOD_SECONDS_120 make init_test && \
-	docker-compose -f ./docker-compose.yml -f ./docker-compose.feefeed.yml up postgres_feefeed feefeed geth nginx postgres
+	docker-compose -f ./docker-compose.yml up postgres_feefeed feefeed geth nginx postgres
 
 start-child_chain:
 	. ${OVERRIDING_VARIABLES} && \

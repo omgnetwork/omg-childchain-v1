@@ -158,7 +158,7 @@ defmodule OMG.DB.RocksDB.Server do
   end
 
   defp do_utxo(utxo_pos, state) do
-    result = Core.key(:utxo, utxo_pos) |> get(state) |> Core.decode_value()
+    result = :utxo |> Core.key(utxo_pos) |> get(state) |> Core.decode_value()
     {:reply, result, state}
   end
 

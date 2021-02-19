@@ -53,7 +53,6 @@ defmodule OMG.ChildChain.FeeServer do
   def init(args) do
     :ok = ensure_ets_init()
 
-
     {:ok, state} =
       __MODULE__
       |> Kernel.struct(args)

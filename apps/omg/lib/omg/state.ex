@@ -204,9 +204,9 @@ defmodule OMG.State do
     end
   end
 
-  def handle_call({:exec_batch, recovered_and_fee_pair}, _from, state) do
+  def handle_call({:exec_batch, recovered_txs_and_fee_pair}, _from, state) do
     db_utxos =
-      Enum.flat_map(recovered_and_fee_pair, fn {tx, _fee} ->
+      Enum.flat_map(recovered_txs_and_fee_pair, fn {tx, _fees} ->
         tx
         |> Transaction.get_inputs()
         |> fetch_utxos_from_db(state)
@@ -215,24 +215,18 @@ defmodule OMG.State do
     starting_acc = {[], state}
 
     {processing_tx_results, new_state} =
-      Enum.reduce(recovered_and_fee_pair, starting_acc, fn {tx, fees}, {acc_exec_responses, acc_state} ->
+      Enum.reduce(recovered_txs_and_fee_pair, starting_acc, fn {tx, fees}, {acc_tx_responses, acc_state} ->
         acc_state
         |> Core.with_utxos(db_utxos)
         |> Core.exec(tx, fees)
         |> case do
           {:ok, tx_result, new_state} ->
-            {[tx_result | acc_exec_responses], new_state}
+            {[tx_result | acc_tx_responses], new_state}
 
           {tx_result, new_state} ->
-            {[tx_result | acc_exec_responses], new_state}
+            {[tx_result | acc_tx_responses], new_state}
         end
       end)
-
-    # a little trick that allows us to verify the complete batch
-    # if processing_result_num means all transactions were applied ok
-    # if processing_result_num is the same as the transaction count at the begining it means all were not ok
-    # otherwise, the result is mixed
-    # this is used to send out a telemetry metric
 
     {:reply, processing_tx_results, new_state}
   end
@@ -295,7 +289,12 @@ defmodule OMG.State do
 
   defp utxo_from_db(input_pointer) do
     # `DB` query can return `:not_found` which is filtered out by following `is_input_pointer?`
-    with {:ok, utxo_kv} <- DB.utxo(Utxo.Position.to_input_db_key(input_pointer)),
-         do: utxo_kv
+    input_pointer
+    |> Utxo.Position.to_input_db_key()
+    |> DB.utxo()
+    |> case do
+      {:ok, utxo_kv} -> utxo_kv
+      :not_found -> :not_found
+    end
   end
 end

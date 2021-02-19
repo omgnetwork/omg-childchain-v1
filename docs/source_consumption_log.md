@@ -25,7 +25,6 @@ credo 0.9.3             -> MIT
 db_connection 1.1.3     -> Apache 2.0
 decimal 1.5.0           -> Apache 2.0
 dialyxir 1.0.0-rc.6     -> Apache 2.0
-ecto 3.1.5              -> Apache 2.0
 erlang-rocksdb 1.2.0    -> Apache 2.0
 erlexec 1.7.5           -> BSD
 ethereumex 0.5.4        -> MIT

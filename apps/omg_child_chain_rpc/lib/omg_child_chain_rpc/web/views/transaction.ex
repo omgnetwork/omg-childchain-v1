@@ -26,8 +26,6 @@ defmodule OMG.ChildChainRPC.Web.View.Transaction do
   end
 
   def render("submit_batch.json", %{response: result}) do
-
-
     result
     |> Response.serialize()
     |> ChildChainRPCResponse.add_app_infos()

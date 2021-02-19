@@ -175,7 +175,7 @@ defmodule OMG.State.Core do
   Extends in-memory utxo set with needed utxos loaded from DB
   See also: State.init_utxos_from_db/2
   """
-  @spec with_utxos(t(), utxos()) :: t()
+  @spec with_utxos(t(), utxos() | list(utxos())) :: t()
   def with_utxos(%Core{utxos: utxos} = state, db_utxos) do
     %{state | utxos: UtxoSet.apply_effects(utxos, [], db_utxos)}
   end
