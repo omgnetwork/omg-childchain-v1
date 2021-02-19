@@ -546,12 +546,17 @@ jobs:
           cache: "test_docker_compose_reorg"
           dir: "~/project/priv/cabbage"
       - run:
-          name: Run specs
+          name: Setup specs
           working_directory: "~/project/priv/cabbage"
           command: |
             make install
             make generate_api_code
             mix deps.get
+          no_output_timeout: 30m
+      - run:
+          name: Run specs
+          working_directory: "~/project/priv/cabbage"
+          command: |
             mix test --only deposit --trace
           no_output_timeout: 30m
 
