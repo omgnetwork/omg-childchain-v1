@@ -24,7 +24,7 @@ defmodule OMG.ChildChainRPC.Web.Router do
 
     post("/block.get", Controller.Block, :get_block)
     post("/transaction.submit", Controller.Transaction, :submit)
-    post("/transaction.submit_batch", Controller.Transaction, :submit_batch)
+    post("/transaction.batch_submit", Controller.Transaction, :submit_batch)
     get("/alarm.get", Controller.Alarm, :get_alarms)
     get("/configuration.get", Controller.Configuration, :get_configuration)
     post("/fees.all", Controller.Fee, :fees_all)

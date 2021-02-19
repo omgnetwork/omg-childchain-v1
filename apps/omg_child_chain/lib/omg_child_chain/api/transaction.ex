@@ -33,10 +33,17 @@ defmodule OMG.ChildChain.API.Transaction do
   def submit_batch(txbytes, child_chain \\ ChildChain) do
     :ok = :telemetry.execute([:submit_batch, __MODULE__], %{})
 
-    result = child_chain.submit_batch(txbytes)
-    _ = send_telemetry(result)
+    case child_chain.submit_batch(txbytes) do
+      # when one of the transactions in the batch fails validation
+      # we short circuit the batch and call it quits
+      {:error, _} = error ->
+        _ = send_telemetry(:all_failed)
+        error
 
-    result
+      {processing_tx_results, processing_result_type} ->
+        _ = send_telemetry(processing_result_type)
+        processing_tx_results
+    end
   end
 
   defp send_telemetry({:ok, _}) do
@@ -45,5 +52,17 @@ defmodule OMG.ChildChain.API.Transaction do
 
   defp send_telemetry({:error, _}) do
     :ok = :telemetry.execute([:submit_failed, __MODULE__], %{})
+  end
+
+  defp send_telemetry(:all_ok) do
+    :ok = :telemetry.execute([:submit_batch_success, __MODULE__], %{})
+  end
+
+  defp send_telemetry(:all_failed) do
+    :ok = :telemetry.execute([:submit_batch_failed, __MODULE__], %{})
+  end
+
+  defp send_telemetry(:mixed) do
+    :ok = :telemetry.execute([:submit_batch_mixed, __MODULE__], %{})
   end
 end

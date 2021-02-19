@@ -212,18 +212,29 @@ defmodule OMG.State do
         |> fetch_utxos_from_db(state)
       end)
 
-    Enum.flat_map_reduce(recovered_and_fee_pair, state, fn {tx, fees}, acc_state ->
-      acc_state
-      |> Core.with_utxos(db_utxos)
-      |> Core.exec(tx, fees)
-      |> case do
-        {:ok, tx_result, new_state} ->
-          {tx_result, new_state}
+    starting_acc = {[], state}
 
-        {tx_result, new_state} ->
-          {tx_result, new_state}
-      end
-    end)
+    {processing_tx_results, new_state} =
+      Enum.reduce(recovered_and_fee_pair, starting_acc, fn {tx, fees}, {acc_exec_responses, acc_state} ->
+        acc_state
+        |> Core.with_utxos(db_utxos)
+        |> Core.exec(tx, fees)
+        |> case do
+          {:ok, tx_result, new_state} ->
+            {[tx_result | acc_exec_responses], new_state}
+
+          {tx_result, new_state} ->
+            {[tx_result | acc_exec_responses], new_state}
+        end
+      end)
+
+    # a little trick that allows us to verify the complete batch
+    # if processing_result_num means all transactions were applied ok
+    # if processing_result_num is the same as the transaction count at the begining it means all were not ok
+    # otherwise, the result is mixed
+    # this is used to send out a telemetry metric
+
+    {:reply, processing_tx_results, new_state}
   end
 
   def handle_call({:deposit, deposits}, _from, state) do

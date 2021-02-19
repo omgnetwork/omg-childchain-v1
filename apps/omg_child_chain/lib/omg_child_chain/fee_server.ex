@@ -52,7 +52,7 @@ defmodule OMG.ChildChain.FeeServer do
 
   def init(args) do
     :ok = ensure_ets_init()
-    IO.inspect(args, label: "args feefeed")
+
 
     {:ok, state} =
       __MODULE__

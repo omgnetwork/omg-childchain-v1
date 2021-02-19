@@ -48,20 +48,33 @@ defmodule OMG.ChildChain do
 
   @spec submit_batch(list(binary)) :: submit_result()
   def submit_batch(transactions) do
-    recovered_and_fee_pair =
-      Enum.map(transactions, fn transaction ->
-        with {:ok, recovered_tx} <- Transaction.Recovered.recover_from(transaction),
-             :ok <- is_supported(recovered_tx),
-             {:ok, fees} <- FeeServer.accepted_fees() do
-          # {:ok, %{txhash: tx_hash, blknum: blknum, txindex: tx_index}}
-          fees = Fees.for_transaction(recovered_tx, fees)
-          {recovered_tx, fees}
-        end
-      end)
+    case recover_transactions(transactions) do
+      recovered_transactions when is_list(recovered_transactions) ->
+        number_of_transactions = Enum.count(transactions)
 
-    {:ok, responses} = State.exec_batch(recovered_and_fee_pair)
-    # responses = [{tx_hash, blknum, tx_index}, ...]
-    result_with_logging(responses)
+        {api_result, processing_result_num} =
+          recovered_transactions
+          |> State.exec_batch()
+          |> Enum.reduce({[], number_of_transactions}, fn
+            {tx_hash, blknum, tx_index}, {tx_result_acc, success_identifier} ->
+              {[%{txhash: tx_hash, blknum: blknum, txindex: tx_index} | tx_result_acc], success_identifier - 1}
+
+            error_tuple, {tx_result_acc, success_identifier} ->
+              {[error_tuple | tx_result_acc], success_identifier}
+          end)
+
+        processing_result_type =
+          case processing_result_num do
+            0 -> :all_ok
+            ^number_of_transactions -> :all_failed
+            _ -> :mixed
+          end
+
+        {api_result, processing_result_type}
+
+      input_error ->
+        input_error
+    end
   end
 
   @spec get_filtered_fees(list(pos_integer()), list(String.t()) | nil) ::
@@ -79,13 +92,37 @@ defmodule OMG.ChildChain do
     result_with_logging(result)
   end
 
-  defp is_supported(%Transaction.Recovered{signed_tx: %Transaction.Signed{raw_tx: %Transaction.Fee{}}}),
-    do: {:error, :transaction_not_supported}
+  defp is_supported(%Transaction.Recovered{signed_tx: %Transaction.Signed{raw_tx: %Transaction.Fee{}}}) do
+    {:error, :transaction_not_supported}
+  end
 
   defp is_supported(%Transaction.Recovered{}), do: :ok
 
   defp result_with_logging(result) do
     _ = Logger.debug(" resulted with #{inspect(result)}")
     result
+  end
+
+  defp recover_transactions(transactions) do
+    recover_transactions(transactions, [])
+  end
+
+  defp recover_transactions([], acc) do
+    Enum.reverse(acc)
+  end
+
+  defp recover_transactions([transaction | transactions], acc) do
+    result =
+      with {:ok, recovered_tx} <- Transaction.Recovered.recover_from(transaction),
+           :ok <- is_supported(recovered_tx),
+           {:ok, fees} <- FeeServer.accepted_fees() do
+        fees = Fees.for_transaction(recovered_tx, fees)
+        {recovered_tx, fees}
+      end
+
+    case result do
+      {:error, _} = error -> error
+      data -> recover_transactions(transactions, [data | acc])
+    end
   end
 end
