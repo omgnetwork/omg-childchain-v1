@@ -58,7 +58,7 @@ defmodule OMG.ChildChain.Fees.FeedAdapterTest do
          fee_adapter_opts: [
            fee_change_tolerance_percent: 10,
            stored_fee_update_interval_minutes: 5,
-           fee_feed_url: "localhost:#{port}"
+           fee_feed_url: "localhost:#{port}/fees"
          ]
        }}
     end
