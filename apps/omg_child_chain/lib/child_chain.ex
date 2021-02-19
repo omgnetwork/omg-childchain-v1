@@ -35,12 +35,18 @@ defmodule OMG.ChildChain do
   @spec submit(transaction :: binary) :: submit_result()
   def submit(transaction) do
     result =
-      with {:ok, recovered_tx} <- Transaction.Recovered.recover_from(transaction),
-           :ok <- is_supported(recovered_tx),
-           {:ok, fees} <- FeeServer.accepted_fees(),
-           fees = Fees.for_transaction(recovered_tx, fees),
-           {:ok, {tx_hash, blknum, tx_index}} <- State.exec(recovered_tx, fees) do
-        {:ok, %{txhash: tx_hash, blknum: blknum, txindex: tx_index}}
+      case recover_and_get_fee(transaction) do
+        {:ok, {recovered_tx, fees}} ->
+          case State.exec(recovered_tx, fees) do
+            {:ok, {tx_hash, blknum, tx_index}} ->
+              {:ok, %{txhash: tx_hash, blknum: blknum, txindex: tx_index}}
+
+            error ->
+              error
+          end
+
+        error ->
+          error
       end
 
     result_with_logging(result)
@@ -53,6 +59,7 @@ defmodule OMG.ChildChain do
         do_submit_batch(recovered_transactions)
 
       input_error ->
+        # if we can't recover transactions we break off!
         input_error
     end
   end
@@ -116,17 +123,20 @@ defmodule OMG.ChildChain do
   end
 
   defp recover_transactions([transaction | transactions], acc) do
-    result =
-      with {:ok, recovered_tx} <- Transaction.Recovered.recover_from(transaction),
-           :ok <- is_supported(recovered_tx),
-           {:ok, fees} <- FeeServer.accepted_fees() do
-        fees = Fees.for_transaction(recovered_tx, fees)
-        {recovered_tx, fees}
-      end
+    result = recover_and_get_fee(transaction)
 
     case result do
       {:error, _} = error -> error
-      data -> recover_transactions(transactions, [data | acc])
+      {:ok, data} -> recover_transactions(transactions, [data | acc])
+    end
+  end
+
+  defp recover_and_get_fee(transaction) do
+    with {:ok, recovered_tx} <- Transaction.Recovered.recover_from(transaction),
+         :ok <- is_supported(recovered_tx),
+         {:ok, fees} <- FeeServer.accepted_fees() do
+      fees = Fees.for_transaction(recovered_tx, fees)
+      {:ok, {recovered_tx, fees}}
     end
   end
 end

@@ -64,8 +64,8 @@ defmodule OMG.State.UtxoSet do
   end
 
   def apply_effects(utxos, spent_input_pointers, new_utxos_list_map) when is_list(new_utxos_list_map) do
-    Enum.reduce(new_utxos_list_map, utxos, fn new_utxos_map, utxos_acc ->
-      utxos_acc |> Map.merge(new_utxos_map) |> Map.drop(spent_input_pointers)
+    Enum.reduce(new_utxos_list_map, utxos, fn new_utxo_map, utxos_acc ->
+      utxos_acc |> Map.merge(new_utxo_map) |> Map.drop(spent_input_pointers)
     end)
   end
 
