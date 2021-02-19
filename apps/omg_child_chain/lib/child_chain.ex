@@ -50,27 +50,7 @@ defmodule OMG.ChildChain do
   def submit_batch(transactions) do
     case recover_transactions(transactions) do
       recovered_transactions when is_list(recovered_transactions) ->
-        number_of_transactions = Enum.count(transactions)
-
-        {api_result, processing_result_num} =
-          recovered_transactions
-          |> State.exec_batch()
-          |> Enum.reduce({[], number_of_transactions}, fn
-            {tx_hash, blknum, tx_index}, {tx_result_acc, success_identifier} ->
-              {[%{txhash: tx_hash, blknum: blknum, txindex: tx_index} | tx_result_acc], success_identifier - 1}
-
-            error_tuple, {tx_result_acc, success_identifier} ->
-              {[error_tuple | tx_result_acc], success_identifier}
-          end)
-
-        processing_result_type =
-          case processing_result_num do
-            0 -> :all_ok
-            ^number_of_transactions -> :all_failed
-            _ -> :mixed
-          end
-
-        {api_result, processing_result_type}
+        do_submit_batch(recovered_transactions)
 
       input_error ->
         input_error
@@ -90,6 +70,30 @@ defmodule OMG.ChildChain do
       end
 
     result_with_logging(result)
+  end
+
+  defp do_submit_batch(recovered_transactions) do
+    number_of_transactions = Enum.count(recovered_transactions)
+
+    {api_result, processing_result_num} =
+      recovered_transactions
+      |> State.exec_batch()
+      |> Enum.reduce({[], number_of_transactions}, fn
+        {tx_hash, blknum, tx_index}, {tx_result_acc, success_identifier} ->
+          {[%{txhash: tx_hash, blknum: blknum, txindex: tx_index} | tx_result_acc], success_identifier - 1}
+
+        error_tuple, {tx_result_acc, success_identifier} ->
+          {[error_tuple | tx_result_acc], success_identifier}
+      end)
+
+    processing_result_type =
+      case processing_result_num do
+        0 -> :all_ok
+        ^number_of_transactions -> :all_failed
+        _ -> :mixed
+      end
+
+    {api_result, processing_result_type}
   end
 
   defp is_supported(%Transaction.Recovered{signed_tx: %Transaction.Signed{raw_tx: %Transaction.Fee{}}}) do

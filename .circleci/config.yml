@@ -708,8 +708,8 @@ workflows:
               only: /.+/
             tags:
               only: /.+/
-      - barebuild_macos:
-          filters: *all_branches_and_tags
+      # - barebuild_macos:
+      #     filters: *all_branches_and_tags
       - test_barebone_release:
           filters: *all_branches_and_tags
       - notify_services:

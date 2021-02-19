@@ -53,25 +53,6 @@ defmodule OMG.ChildChainRPC.Web.Controller.Fallback do
     })
   end
 
-  def call(conn, responses) when is_list(responses) do
-    messages =
-      Enum.map(responses, fn {:error, response} ->
-        error = error_info(conn, response)
-        %{code: error.code, description: error.description}
-      end)
-
-    conn
-    |> put_view(Views.Error)
-    |> render(
-      :error,
-      %{
-        code: "operation:batch_submission",
-        description: "some transaction in the batch failed",
-        messages: messages
-      }
-    )
-  end
-
   def call(conn, {:error, reason}) do
     error = error_info(conn, reason)
     :telemetry.execute([:web, :fallback], %{error: 1}, %{error_code: error.code, route: current_route(conn)})
