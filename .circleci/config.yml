@@ -266,7 +266,7 @@ jobs:
             _counter=$(mix credo --only Credo.Check.Readability.SinglePipe | grep -c "Use a function call when a pipeline is only one function long")
             echo "Current Credo.Check.Readability.SinglePipe occurrences:"
             echo $_counter
-            if [ $_counter -gt 40 ]; then
+            if [ $_counter -gt 39 ]; then
               echo "Have you been naughty or nice? Find out if Santa knows."
               exit 1
             fi
@@ -490,10 +490,10 @@ jobs:
           background: true
           command: docker-compose logs -f
       - run:
-          name: Test
+          name: Run specs
           working_directory: ~/project/priv/cabbage
           command: |
-            grep -r "@moduletag" ./apps/itest/ | awk '{print "--include " $3}' | tr -d ':' | awk 'BEGIN{srand()}{printf "%06d %s\n", rand()*1000000, $0;}' | sort -n | cut -c8- > tags.txt
+            grep -r "@moduletag" ./apps/itest/ | awk '{print "--include " $3}' | tr -d ':' > tags.txt
             echo $(circleci tests split ./tags.txt)
             circleci tests split ./tags.txt > /tmp/tests-to-run
             mix test --exclude test $(cat /tmp/tests-to-run)
