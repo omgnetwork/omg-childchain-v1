@@ -78,7 +78,15 @@ commands:
   make_docker_images:
     description: Builds docker images
     steps:
+      - restore_cache:
+          key: make_docker_images-{{ checksum "mix.lock" }}
+      - run: rm -rf _build_docker/prod/lib/omg*
       - run: make docker-child_chain
+      - save_cache:
+          key: make_docker_images-{{ checksum "mix.lock" }}
+          paths:
+            - "deps_docker/"
+            - "_build_docker/"
 
   install_elixir:
     parameters:
@@ -491,8 +499,7 @@ jobs:
           command: docker-compose logs -f
       - run:
           command: |
-            TESTFILES=$(circleci tests glob "apps/itest/test/itest/*_test.exs" | circleci tests split --split-
-            by=timings --timings-type=classname --show-counts)
+            TESTFILES=$(circleci tests glob "apps/itest/test/itest/*_test.exs" | circleci tests split --split-by=timings --timings-type=classname --show-counts)
       - run:
           name: Run specs
           working_directory: ~/project/priv/cabbage
