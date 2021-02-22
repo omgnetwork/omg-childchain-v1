@@ -508,7 +508,7 @@ jobs:
             echo ${TESTFILES}
             mix test ${TESTFILES} --trace
       - store_test_results:
-          path: test-results/exunit
+          path: ~/project/priv/cabbage/test-results/exunit
 
   test_docker_compose_reorg:
     machine:
