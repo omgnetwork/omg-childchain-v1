@@ -206,20 +206,19 @@ defmodule OMG.State do
 
   def handle_call({:exec_batch, recovered_txs_and_fee_pair}, _from, state) do
     db_utxos =
-      Enum.flat_map(recovered_txs_and_fee_pair, fn {tx, _fees} ->
+      recovered_txs_and_fee_pair
+      |> Enum.map(fn {tx, _fees} ->
         tx
         |> Transaction.get_inputs()
         |> fetch_utxos_from_db(state)
       end)
+      |> Enum.uniq()
 
-    starting_acc = {[], state}
+    starting_acc = {[], Core.with_utxos(state, db_utxos)}
 
     {processing_tx_results, new_state} =
       Enum.reduce(recovered_txs_and_fee_pair, starting_acc, fn {tx, fees}, {acc_tx_responses, acc_state} ->
-        acc_state
-        |> Core.with_utxos(db_utxos)
-        |> Core.exec(tx, fees)
-        |> case do
+        case Core.exec(acc_state, tx, fees) do
           {:ok, tx_result, new_state} ->
             {[tx_result | acc_tx_responses], new_state}
 

@@ -19,11 +19,6 @@ defmodule OMG.State.Transaction.Validator do
 
   require OMG.State.Transaction.Payment
 
-  @maximum_block_size 65_536
-  # NOTE: Last processed transaction could potentially take his room but also generate `max_inputs` fee transactions
-  @safety_margin 1 + OMG.State.Transaction.Payment.max_inputs()
-  @available_block_size @maximum_block_size - @safety_margin
-
   alias OMG.Fees
   alias OMG.State.Core
   alias OMG.State.Transaction
@@ -48,7 +43,7 @@ defmodule OMG.State.Transaction.Validator do
   defp validate_block_size(state) do
     fee_transactions_count = Enum.count(state.fees_paid)
 
-    case state.tx_index + fee_transactions_count > @available_block_size do
+    case state.tx_index + fee_transactions_count > state.available_block_size do
       true -> {{:error, :too_many_transactions_in_block}, state}
       false -> :ok
     end

@@ -70,11 +70,10 @@ defmodule OMG.State.PersistenceTest do
 
   @tag fixtures: [:alice, :bob]
   test "persists deposits and utxo is available after restart", %{alice: alice, bob: bob} do
-    [
+    persist_deposit([
       %{owner: bob, currency: @eth, amount: 10, blknum: 1},
       %{owner: alice, currency: @eth, amount: 20, blknum: 2}
-    ]
-    |> persist_deposit()
+    ])
 
     assert OMG.State.utxo_exists?(Utxo.position(2, 0, 0))
 
@@ -111,6 +110,18 @@ defmodule OMG.State.PersistenceTest do
   end
 
   @tag fixtures: [:alice, :bob]
+  test "utxos are available after restart using batch", %{alice: alice, bob: bob} do
+    :ok = persist_deposit([%{owner: alice, currency: @eth, amount: 20, blknum: 1}])
+    true = is_list(exec_batch([create_recovered([{1, 0, 0, alice}], @eth, [{bob, 17}, {alice, 2}])]))
+    true = is_list(exec_batch([create_recovered([{@blknum1, 0, 0, bob}, {@blknum1, 0, 1, alice}], @eth, [{bob, 18}])]))
+    :ok = persist_form()
+    :ok = restart_state()
+    assert not OMG.State.utxo_exists?(Utxo.position(@blknum1, 0, 0))
+    assert not OMG.State.utxo_exists?(Utxo.position(@blknum1, 0, 1))
+    assert OMG.State.utxo_exists?(Utxo.position(@blknum1, 1, 0))
+  end
+
+  @tag fixtures: [:alice, :bob]
   test "cannot double spend from the transactions within the same block", %{alice: alice, bob: bob} do
     :ok = persist_deposit([%{owner: alice, currency: @eth, amount: 10, blknum: 1}])
 
@@ -119,6 +130,39 @@ defmodule OMG.State.PersistenceTest do
 
     assert :ok == exec(create_recovered([{1, 0, 0, alice}], @eth, [{bob, 6}, {alice, 3}]))
     assert :utxo_not_found == exec(create_recovered([{1, 0, 0, alice}], @eth, [{alice, 10}]))
+  end
+
+  @tag fixtures: [:alice, :bob]
+  test "cannot double spend from the transactions within the same block in a batch", %{alice: alice, bob: bob} do
+    :ok = persist_deposit([%{owner: alice, currency: @eth, amount: 10, blknum: 1}])
+
+    # after the restart newly up state won't have deposit's utxo in memory
+    :ok = restart_state()
+
+    [{:error, :utxo_not_found}, {:error, :utxo_not_found}, {_, 1000, 0}] =
+      exec_batch([
+        create_recovered([{1, 0, 0, alice}], @eth, [{bob, 6}, {alice, 3}]),
+        create_recovered([{1, 0, 0, alice}], @eth, [{bob, 6}, {alice, 3}]),
+        create_recovered([{1, 0, 0, alice}], @eth, [{bob, 6}, {alice, 3}])
+      ])
+  end
+
+  @tag fixtures: [:alice, :bob]
+  test "hit the transaction limit in a block using batch", %{alice: alice, bob: bob} do
+    :ok = persist_deposit([%{owner: alice, currency: @eth, amount: 10, blknum: 1}])
+
+    maximum_block_size = 6
+
+    :sys.replace_state(OMG.State, fn state ->
+      %{state | available_block_size: maximum_block_size - (1 + OMG.State.Transaction.Payment.max_inputs())}
+    end)
+
+    [{:error, :too_many_transactions_in_block}, {:error, :too_many_transactions_in_block}, {_, 1000, 0}] =
+      exec_batch([
+        create_recovered([{1, 0, 0, alice}], @eth, [{bob, 6}, {alice, 3}]),
+        create_recovered([{1, 0, 0, alice}], @eth, [{bob, 6}, {alice, 3}]),
+        create_recovered([{1, 0, 0, alice}], @eth, [{bob, 6}, {alice, 3}])
+      ])
   end
 
   @tag fixtures: [:alice]
@@ -236,6 +280,12 @@ defmodule OMG.State.PersistenceTest do
       {:ok, _} -> :ok
       {:error, reason} -> reason
     end
+  end
+
+  defp exec_batch(txs) do
+    fees = Enum.map(1..Enum.count(txs), fn _ -> %{@eth => [1]} end)
+
+    OMG.State.exec_batch(Enum.zip(txs, fees))
   end
 
   defp persist_exit_utxos(:ok, exit_infos), do: persist_exit_utxos(exit_infos)
