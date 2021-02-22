@@ -490,13 +490,16 @@ jobs:
           background: true
           command: docker-compose logs -f
       - run:
+          command: |
+            TESTFILES=$(circleci tests glob "apps/itest/test/itest/*_test.exs" | circleci tests split --split-
+            by=timings --timings-type=classname --show-counts)
+      - run:
           name: Run specs
           working_directory: ~/project/priv/cabbage
           command: |
-            grep -r "@moduletag" ./apps/itest/ | awk '{print "--include " $3}' | tr -d ':' | uniq -u > tags.txt
-            echo $(circleci tests split ./tags.txt)
-            circleci tests split ./tags.txt > /tmp/tests-to-run
-            mix test --exclude test $(cat /tmp/tests-to-run)
+            mix test ${TESTFILES} --trace
+      - store_test_results:
+          path: test-results/exunit
 
   test_docker_compose_reorg:
     machine:
@@ -727,7 +730,15 @@ workflows:
       - test_docker_compose_release:
           filters: *all_branches_and_tags
       - test_docker_compose_reorg:
-          filters: *all_branches_and_tags
+           filters: &master_and_version_branches_and_all_tags
+            branches:
+              only:
+                - master
+                # vMAJOR.MINOR (e.g. v0.1, v0.2, v1.0, v2.1, etc.)
+                - /^v[0-9]+\.[0-9]+/
+            tags:
+              only:
+                - /.+/
       - audit_deps:
           requires: [build]
           filters: *all_branches_and_tags
