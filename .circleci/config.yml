@@ -498,6 +498,7 @@ jobs:
           background: true
           command: docker-compose logs -f
       - run:
+          working_directory: ~/project/priv/cabbage
           command: |
             TESTFILES=$(circleci tests glob "test/**/*_test.exs" | circleci tests split --split-by=timings --timings-type=classname --show-counts)
       - run:
