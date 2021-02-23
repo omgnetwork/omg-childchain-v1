@@ -508,7 +508,7 @@ jobs:
             mix test ${TESTFILES} --trace
             ls
       - store_test_results:
-          path: ~/project/priv/cabbage/test-results/exunit
+          path: ~/project/priv/cabbage/_build/test/lib/itest/
 
   test_docker_compose_reorg:
     machine:
