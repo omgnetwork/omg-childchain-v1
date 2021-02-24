@@ -501,12 +501,9 @@ jobs:
           name: Run specs
           working_directory: ~/project/priv/cabbage
           command: |
-            TESTFILES=$(circleci tests glob "apps/itest/test/itest/*_test.exs" | circleci tests split --split-by=timings --timings-type=classname --show-counts)
-            echo ${TESTFILES}
-            TESTFILES=$(echo ${TESTFILES} | cut -d'/' -f3-)
+            TESTFILES=$(circleci tests glob "apps/itest/test/itest/*_test.exs" | circleci tests split --split-by=timings --show-counts)
             echo ${TESTFILES}
             mix test ${TESTFILES} --trace
-            ls
       - store_test_results:
           path: ~/project/priv/cabbage/_build/test/lib/itest/
 
