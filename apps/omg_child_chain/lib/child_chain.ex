@@ -35,18 +35,9 @@ defmodule OMG.ChildChain do
   @spec submit(transaction :: binary) :: submit_result()
   def submit(transaction) do
     result =
-      case recover_and_get_fee(transaction) do
-        {:ok, {recovered_tx, fees}} ->
-          case State.exec(recovered_tx, fees) do
-            {:ok, {tx_hash, blknum, tx_index}} ->
-              {:ok, %{txhash: tx_hash, blknum: blknum, txindex: tx_index}}
-
-            error ->
-              error
-          end
-
-        error ->
-          error
+      with {:ok, {recovered_tx, fees}} <- recover_and_get_fee(transaction),
+           {:ok, {tx_hash, blknum, tx_index}} <- State.exec(recovered_tx, fees) do
+        {:ok, %{txhash: tx_hash, blknum: blknum, txindex: tx_index}}
       end
 
     result_with_logging(result)
