@@ -95,8 +95,8 @@ defmodule OMG.ChildChain do
 
     processing_result_type =
       case processing_result_num do
-        0 -> :all_ok
-        ^number_of_transactions -> :all_failed
+        0 -> :ok
+        ^number_of_transactions -> :failed
         _ -> :mixed
       end
 

@@ -112,8 +112,11 @@ defmodule OMG.State.PersistenceTest do
   @tag fixtures: [:alice, :bob]
   test "utxos are available after restart using batch", %{alice: alice, bob: bob} do
     :ok = persist_deposit([%{owner: alice, currency: @eth, amount: 20, blknum: 1}])
-    true = is_list(exec_batch([create_recovered([{1, 0, 0, alice}], @eth, [{bob, 17}, {alice, 2}])]))
-    true = is_list(exec_batch([create_recovered([{@blknum1, 0, 0, bob}, {@blknum1, 0, 1, alice}], @eth, [{bob, 18}])]))
+
+    [{_, 1000, 0}] = exec_batch([create_recovered([{1, 0, 0, alice}], @eth, [{bob, 17}, {alice, 2}])])
+
+    [{_, 1000, 1}] = exec_batch([create_recovered([{@blknum1, 0, 0, bob}, {@blknum1, 0, 1, alice}], @eth, [{bob, 18}])])
+
     :ok = persist_form()
     :ok = restart_state()
     assert not OMG.State.utxo_exists?(Utxo.position(@blknum1, 0, 0))

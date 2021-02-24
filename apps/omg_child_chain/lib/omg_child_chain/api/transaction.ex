@@ -54,11 +54,11 @@ defmodule OMG.ChildChain.API.Transaction do
     :ok = :telemetry.execute([:submit_failed, __MODULE__], %{})
   end
 
-  defp send_telemetry(:all_ok) do
+  defp send_telemetry(:ok) do
     :ok = :telemetry.execute([:submit_batch_success, __MODULE__], %{})
   end
 
-  defp send_telemetry(:all_failed) do
+  defp send_telemetry(:failed) do
     :ok = :telemetry.execute([:submit_batch_failed, __MODULE__], %{})
   end
 
