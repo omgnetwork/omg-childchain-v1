@@ -48,15 +48,27 @@ defmodule OMG.BlockTest do
              }
     end
 
-    @tag timeout: 60_000 * 2
     @tag fixtures: [:stable_alice, :stable_bob]
     test "correctly calculates hash for a lot of transactions", %{
       stable_alice: alice,
       stable_bob: bob
     } do
       transactions =
-        Enum.map(1..64_000, fn index ->
-          TestHelper.create_recovered([{1, index, index, alice}], eth(), [{bob, 100}])
+        1..64_000
+        |> Enum.chunk_every(4000)
+        |> Enum.map(fn chunk ->
+          chunk
+          |> Task.async_stream(
+            fn index -> TestHelper.create_recovered([{1, index, index, alice}], eth(), [{bob, 100}]) end,
+            ordered: true,
+            timeout: 60_000,
+            on_timeout: :exit,
+            max_concurrency: System.schedulers_online() * 3
+          )
+          |> Enum.map(fn {:ok, result} -> result end)
+        end)
+        |> Enum.reduce([], fn chunk_of_4000_transactions, acc ->
+          acc ++ chunk_of_4000_transactions
         end)
 
       block = Block.hashed_txs_at(transactions, 10)

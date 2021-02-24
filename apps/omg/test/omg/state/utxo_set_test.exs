@@ -30,7 +30,7 @@ defmodule OMG.State.UtxoSetTest do
   @eth OMG.Eth.zero_address()
 
   setup do
-    [alice, bob] = 1..2 |> Enum.map(fn _ -> generate_entity() end)
+    [alice, bob] = Enum.map(1..2, fn _ -> generate_entity() end)
 
     transaction = create_recovered([{1, 0, 0, alice}, {2, 0, 0, bob}], [{bob, @eth, 1}, {bob, @eth, 2}])
     inputs = Transaction.get_inputs(transaction)
@@ -108,6 +108,37 @@ defmodule OMG.State.UtxoSetTest do
 
       assert {:ok, [^output]} =
                [] |> UtxoSet.init() |> UtxoSet.apply_effects([], utxo_map) |> UtxoSet.get_by_inputs([input])
+    end
+
+    test "will apply effects of new utxos (from a list) being created", %{
+      inputs: [input_1, input_2 | _],
+      outputs: [output_1, output_2 | _]
+    } do
+      utxo_list_map = [
+        %{input_1 => %Utxo{output: output_1, creating_txhash: <<1>>}},
+        %{input_2 => %Utxo{output: output_2, creating_txhash: <<1>>}}
+      ]
+
+      assert %{
+               {:utxo_position, 1, 0, 0} => %OMG.Utxo{
+                 creating_txhash: <<1>>,
+                 output: %OMG.Output{
+                   amount: 1,
+                   currency: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>,
+                   output_type: 1,
+                   owner: output_1.owner
+                 }
+               },
+               {:utxo_position, 2, 0, 0} => %OMG.Utxo{
+                 creating_txhash: <<1>>,
+                 output: %OMG.Output{
+                   amount: 2,
+                   currency: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>,
+                   output_type: 1,
+                   owner: output_2.owner
+                 }
+               }
+             } == [] |> UtxoSet.init() |> UtxoSet.apply_effects([], utxo_list_map)
     end
 
     test "will create first, spend second", %{inputs: [input | _], outputs: [output | _]} do

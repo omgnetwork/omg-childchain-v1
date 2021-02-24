@@ -24,7 +24,11 @@ defmodule OMG.ChildChain.Measure do
   @supported_events [
     [:submit, TransactionAPI],
     [:submit_success, TransactionAPI],
-    [:submit_failed, TransactionAPI]
+    [:submit_failed, TransactionAPI],
+    [:submit_batch, TransactionAPI],
+    [:submit_batch_success, TransactionAPI],
+    [:submit_batch_failed, TransactionAPI],
+    [:submit_batch_mixed, TransactionAPI]
   ]
 
   def supported_events(), do: @supported_events
@@ -39,5 +43,21 @@ defmodule OMG.ChildChain.Measure do
 
   def handle_event([:submit_failed, TransactionAPI], _, _metadata, _config) do
     _ = Datadog.increment(name(:transaction_submission_failed), 1)
+  end
+
+  def handle_event([:submit_batch, TransactionAPI], _measurements, _metadata, _config) do
+    _ = Datadog.increment(name(:transaction_batch_submission), 1)
+  end
+
+  def handle_event([:submit_batch_success, TransactionAPI], _, _metadata, _config) do
+    _ = Datadog.increment(name(:transaction_batch_submission_success), 1)
+  end
+
+  def handle_event([:submit_batch_failed, TransactionAPI], _, _metadata, _config) do
+    _ = Datadog.increment(name(:transaction_batch_submission_failed), 1)
+  end
+
+  def handle_event([:submit_batch_mixed, TransactionAPI], _, _metadata, _config) do
+    _ = Datadog.increment(name(:transaction_batch_submission_mixed), 1)
   end
 end

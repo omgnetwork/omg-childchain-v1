@@ -58,7 +58,13 @@ defmodule OMG.State.Core do
     utxo_db_updates: [],
     recently_spent: MapSet.new(),
     fees_paid: %{},
-    fee_claiming_started: false
+    fee_claiming_started: false,
+    # @maximum_block_size 65_536
+    # NOTE: Last processed transaction could potentially take his room but also generate `max_inputs` fee transactions
+    # @safety_margin 1 + OMG.State.Transaction.Payment.max_inputs()
+    # @available_block_size @maximum_block_size - @safety_margin
+
+    available_block_size: 65_536 - (1 + OMG.State.Transaction.Payment.max_inputs())
   ]
 
   alias OMG.Block
@@ -175,7 +181,7 @@ defmodule OMG.State.Core do
   Extends in-memory utxo set with needed utxos loaded from DB
   See also: State.init_utxos_from_db/2
   """
-  @spec with_utxos(t(), utxos()) :: t()
+  @spec with_utxos(t(), utxos() | list(utxos())) :: t()
   def with_utxos(%Core{utxos: utxos} = state, db_utxos) do
     %{state | utxos: UtxoSet.apply_effects(utxos, [], db_utxos)}
   end

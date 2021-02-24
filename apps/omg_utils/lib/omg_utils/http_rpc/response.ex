@@ -58,13 +58,12 @@ defmodule OMG.Utils.HttpRPC.Response do
   end
 
   def sanitize(list) when is_list(list) do
-    list |> Enum.map(&sanitize/1)
+    Enum.map(list, &sanitize/1)
   end
 
   def sanitize(map_or_struct) when is_map(map_or_struct) do
     map_or_struct
     |> to_map()
-    |> do_filter()
     |> sanitize_map()
   end
 
@@ -81,18 +80,6 @@ defmodule OMG.Utils.HttpRPC.Response do
   def version(app) do
     {:ok, vsn} = :application.get_key(app, :vsn)
     List.to_string(vsn) <> "+" <> @sha
-  end
-
-  defp do_filter(map_or_struct) do
-    if :code.is_loaded(Ecto) do
-      Enum.filter(map_or_struct, fn
-        {_, %{__struct__: Ecto.Association.NotLoaded}} -> false
-        _ -> true
-      end)
-      |> Map.new()
-    else
-      map_or_struct
-    end
   end
 
   # Allows to skip sanitize on specifies keys provided in list in key :skip_hex_encode

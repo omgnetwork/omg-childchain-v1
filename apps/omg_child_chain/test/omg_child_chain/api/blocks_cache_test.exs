@@ -57,7 +57,7 @@ defmodule OMG.ChildChain.API.BlocksCacheTest do
     |> Task.async_stream(fn _ -> get_block(blocks) end,
       timeout: 5000,
       on_timeout: :kill_task,
-      max_concurrency: 1000
+      max_concurrency: System.schedulers_online() * 3
     )
     |> Enum.map(fn {:ok, result} -> result end)
 

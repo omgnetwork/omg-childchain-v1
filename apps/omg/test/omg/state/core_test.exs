@@ -1121,13 +1121,12 @@ defmodule OMG.State.CoreTest do
       |> success?()
     end
 
-    # this test takes ~26 seconds on my machine
-    @tag timeout: 240_000
-    @tag slow: true
     test "long running full block test", %{alice: alice, state_empty: state, fees: fees} do
-      Logger.warn("slow test is running, use --exclude slow to skip")
-
-      maximum_block_size = 65_536
+      # we certanly do not have to do 65536 transactions in order to test the limit
+      # if we update the state limit
+      # maximum_block_size = 65_536
+      maximum_block_size = 536
+      available_block_size = maximum_block_size - (1 + OMG.State.Transaction.Payment.max_inputs())
       maximum_inputs_size = 4
       eth_fee_rate = Enum.at(fees[@eth], 0)
       amount_for_fees = (1 + eth_fee_rate) * maximum_block_size
@@ -1135,7 +1134,7 @@ defmodule OMG.State.CoreTest do
 
       # First tx is applied just to make below transactions generation easier
       state =
-        state
+        %{state | available_block_size: available_block_size}
         |> TestHelper.do_deposit(alice, %{amount: amount_for_fees, currency: @eth, blknum: 1})
         |> Core.exec(TestHelper.create_recovered([{1, 0, 0, alice}], @eth, [{alice, available_after_1st_tx}]), fees)
         |> success?()

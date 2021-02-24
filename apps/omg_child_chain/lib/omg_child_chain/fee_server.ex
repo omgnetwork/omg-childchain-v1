@@ -42,8 +42,8 @@ defmodule OMG.ChildChain.FeeServer do
            fee_buffer_duration_ms: pos_integer(),
            fee_adapter: OMG.ChildChain.Fees.FileAdapter | OMG.ChildChain.Fees.FeedAdapter,
            fee_adapter_opts: Keyword.t(),
-           fee_adapter_check_timer: :timer.tref(),
-           expire_fee_timer: :timer.tref()
+           fee_adapter_check_timer: reference(),
+           expire_fee_timer: reference()
          }
 
   def start_link(opts) do
@@ -120,26 +120,22 @@ defmodule OMG.ChildChain.FeeServer do
   end
 
   @spec update_fee_specs(t()) :: :ok | {:ok, t()} | {:error, list({:error, atom(), any(), non_neg_integer() | nil})}
-  defp update_fee_specs(
-         %__MODULE__{
-           fee_adapter: fee_adapter,
-           fee_adapter_opts: fee_adapter_opts,
-           expire_fee_timer: current_expire_fee_timer,
-           fee_buffer_duration_ms: fee_buffer_duration_ms
-         } = state
-       ) do
+  defp update_fee_specs(state) do
     source_updated_at = :ets.lookup_element(:fees_bucket, :fee_specs_source_updated_at, 2)
     current_fee_specs = load_current_fees()
 
-    case fee_adapter.get_fee_specs(fee_adapter_opts, current_fee_specs, source_updated_at) do
+    case state.fee_adapter.get_fee_specs(state.fee_adapter_opts, current_fee_specs, source_updated_at) do
       {:ok, fee_specs, source_updated_at} ->
         :ok = save_fees(fee_specs, source_updated_at)
-        _ = Logger.info("Reloaded fee specs from #{inspect(fee_adapter)}, changed at #{inspect(source_updated_at)}")
-        new_expire_fee_timer = start_expiration_timer(current_expire_fee_timer, fee_buffer_duration_ms)
+
+        _ =
+          Logger.info("Reloaded fee specs from #{inspect(state.fee_adapter)}, changed at #{inspect(source_updated_at)}")
+
+        new_expire_fee_timer = start_expiration_timer(state.expire_fee_timer, state.fee_buffer_duration_ms)
 
         _ =
           Logger.info(
-            "Timer started: previous fees will still be valid for #{inspect(fee_buffer_duration_ms)} ms, or until new fees are set"
+            "Timer started: previous fees will still be valid for #{inspect(state.fee_buffer_duration_ms)} ms, or until new fees are set"
           )
 
         {:ok, %__MODULE__{state | expire_fee_timer: new_expire_fee_timer}}

@@ -57,7 +57,12 @@ defmodule OMG.State.UtxoSet do
   @doc """
   Updates itself given a list of spent input pointers and a map of UTXOs created upon a transaction
   """
-  @spec apply_effects(t(), list(OMG.Utxo.Position.t()), t()) :: t()
+  def apply_effects(utxos, spent_input_pointers, new_utxos_list_map) when is_list(new_utxos_list_map) do
+    Enum.reduce(new_utxos_list_map, utxos, fn new_utxo_map, utxos_acc ->
+      utxos_acc |> Map.merge(new_utxo_map) |> Map.drop(spent_input_pointers)
+    end)
+  end
+
   def apply_effects(utxos, spent_input_pointers, new_utxos_map) do
     utxos |> Map.merge(new_utxos_map) |> Map.drop(spent_input_pointers)
   end

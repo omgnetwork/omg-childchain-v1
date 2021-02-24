@@ -31,6 +31,8 @@ paths:
     $ref: 'configuration/paths.yaml#/configuration.get'
   /transaction.submit:
     $ref: 'transaction/paths.yaml#/transaction.submit'
+  /transaction.batch_submit:
+    $ref: 'batch_transaction/paths.yaml#/transaction.batch_submit'
   /block.get:
     $ref: 'block/paths.yaml#/block.get'
   /fees.all:

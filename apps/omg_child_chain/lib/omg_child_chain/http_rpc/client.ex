@@ -31,7 +31,7 @@ defmodule OMG.ChildChain.HttpRPC.Client do
   """
   @spec all_fees(binary()) :: response_t()
   def all_fees(url) do
-    "#{url}/fees"
+    "#{url}"
     |> HTTPoison.get([{"content-type", "application/json"}])
     |> handle_response()
     |> parse_fee_response_body()

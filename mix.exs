@@ -79,9 +79,7 @@ defmodule OMG.Umbrella.MixProject do
 
   defp aliases() do
     [
-      test: ["test --no-start"],
-      "ecto.setup": ["ecto.create", "ecto.migrate"],
-      "ecto.reset": ["ecto.drop", "ecto.setup"]
+      test: ["test --no-start"]
     ]
   end
 
@@ -99,7 +97,6 @@ defmodule OMG.Umbrella.MixProject do
     [
       :briefly,
       :cowboy,
-      :ex_machina,
       :ex_unit,
       :exexec,
       :fake_server,

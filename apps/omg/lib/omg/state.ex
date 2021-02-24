@@ -70,6 +70,13 @@ defmodule OMG.State do
     GenServer.call(__MODULE__, {:exec, tx, input_fees}, @timeout)
   end
 
+  @spec exec_batch(list({Transaction.Recovered.t(), Fees.optional_fee_t()})) ::
+          {:ok, list({Transaction.tx_hash(), pos_integer, non_neg_integer})}
+          | {:error, exec_error()}
+  def exec_batch(recovered_and_fee_pair) do
+    GenServer.call(__MODULE__, {:exec_batch, recovered_and_fee_pair}, @timeout)
+  end
+
   @doc """
   Intended for the `OMG.ChildChain`. Forms a new block and persist it. Broadcasts the block to the internal event bus
   to be used in other processes.
@@ -197,6 +204,32 @@ defmodule OMG.State do
     end
   end
 
+  def handle_call({:exec_batch, recovered_txs_and_fee_pair}, _from, state) do
+    db_utxos =
+      recovered_txs_and_fee_pair
+      |> Enum.map(fn {tx, _fees} ->
+        tx
+        |> Transaction.get_inputs()
+        |> fetch_utxos_from_db(state)
+      end)
+      |> Enum.uniq()
+
+    starting_acc = {[], Core.with_utxos(state, db_utxos)}
+
+    {processing_tx_results, new_state} =
+      Enum.reduce(recovered_txs_and_fee_pair, starting_acc, fn {tx, fees}, {acc_tx_responses, acc_state} ->
+        case Core.exec(acc_state, tx, fees) do
+          {:ok, tx_result, new_state} ->
+            {[tx_result | acc_tx_responses], new_state}
+
+          {tx_result, new_state} ->
+            {[tx_result | acc_tx_responses], new_state}
+        end
+      end)
+
+    {:reply, processing_tx_results, new_state}
+  end
+
   def handle_call({:deposit, deposits}, _from, state) do
     {:ok, db_updates, new_state} = Core.deposit(deposits, state)
 
@@ -255,7 +288,12 @@ defmodule OMG.State do
 
   defp utxo_from_db(input_pointer) do
     # `DB` query can return `:not_found` which is filtered out by following `is_input_pointer?`
-    with {:ok, utxo_kv} <- DB.utxo(Utxo.Position.to_input_db_key(input_pointer)),
-         do: utxo_kv
+    input_pointer
+    |> Utxo.Position.to_input_db_key()
+    |> DB.utxo()
+    |> case do
+      {:ok, utxo_kv} -> utxo_kv
+      :not_found -> :not_found
+    end
   end
 end
