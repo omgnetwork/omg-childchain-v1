@@ -37,7 +37,7 @@ defmodule OMG.ChildChain.API.Transaction do
       # when one of the transactions in the batch fails validation
       # we short circuit the batch and call it quits
       {:error, _} = error ->
-        _ = send_telemetry(:all_failed)
+        _ = send_telemetry(:failed)
         error
 
       {processing_tx_results, processing_result_type} ->
