@@ -107,6 +107,9 @@ defmodule OMG.ChildChain.BlockQueue.Core do
     # config:
     child_block_interval: nil,
     block_submit_every_nth: 1,
+    block_has_at_least_txs_in_block: 1,
+    force_block_submission_after_ms: 70000,
+    force_block_submission_countdown: nil,
     finality_threshold: 12,
     gas_price_adj_params: %GasPriceAdjustment{}
   ]
@@ -129,6 +132,12 @@ defmodule OMG.ChildChain.BlockQueue.Core do
           child_block_interval: pos_integer(),
           # configure to trigger forming a child chain block every this many Ethereum blocks are mined since enqueueing
           block_submit_every_nth: pos_integer(),
+          # configurable property so that we wait until blocks have sufficient enough transactions
+          block_has_at_least_txs_in_block: pos_integer(),
+          # we don't want to wait for too long for incoming transactions
+          force_block_submission_after_ms: pos_integer(),
+          # helper for force_block_submission_after_ms
+          force_block_submission_countdown: Time.t() | nil,
           # depth of max reorg we take into account
           finality_threshold: pos_integer(),
           # the gas price adjustment strategy parameters
@@ -179,18 +188,29 @@ defmodule OMG.ChildChain.BlockQueue.Core do
   Based on that, decides whether new block forming should be triggered as well as the gas price to use for subsequent
   submissions.
   """
-  @spec set_ethereum_status(Core.t(), BlockQueue.eth_height(), BlockQueue.plasma_block_num(), boolean()) ::
+  @spec set_ethereum_status(
+          Core.t(),
+          BlockQueue.eth_height(),
+          BlockQueue.plasma_block_num(),
+          boolean(),
+          non_neg_integer()
+        ) ::
           {:do_form_block, Core.t()} | {:dont_form_block, Core.t()}
-  def set_ethereum_status(state, parent_height, mined_child_block_num, is_empty_block) do
+  def set_ethereum_status(state, parent_height, mined_child_block_num, is_empty_block, pending_txs) do
     new_state =
       %{state | parent_height: parent_height}
       |> set_mined(mined_child_block_num)
       |> adjust_gas_price()
 
-    if should_form_block?(new_state, is_empty_block) do
-      {:do_form_block, %{new_state | wait_for_enqueue: true}}
-    else
-      {:dont_form_block, new_state}
+    case should_form_block?(new_state, is_empty_block, pending_txs) do
+      true ->
+        {:do_form_block, %{new_state | force_block_submission_countdown: nil, wait_for_enqueue: true}}
+
+      false ->
+        {:dont_form_block, new_state}
+
+      {false, utc_now} ->
+        {:dont_form_block, %{new_state | force_block_submission_countdown: utc_now}}
     end
   end
 
@@ -490,12 +510,30 @@ defmodule OMG.ChildChain.BlockQueue.Core do
     fn {blknum, _} -> next_blknum_to_mine(state) <= blknum and blknum <= state.formed_child_block_num end
   end
 
-  @spec should_form_block?(Core.t(), boolean()) :: boolean()
-  defp should_form_block?(state, is_empty_block) do
+  @spec should_form_block?(Core.t(), boolean(), non_neg_integer()) :: boolean() | {false, Time.t()}
+  defp should_form_block?(state, is_empty_block, pending_txs) do
     # e.g. if we're at 15th Ethereum block now, last enqueued was at 14th, we're submitting a child chain block on every
     # single Ethereum block (`block_submit_every_nth` == 1), then we could form a new block (`it_is_time` is `true`)
     it_is_time = state.parent_height - state.last_enqueued_block_at_height >= state.block_submit_every_nth
-    should_form_block = it_is_time and !state.wait_for_enqueue and !is_empty_block
+    met_transaction_number_limit = Enum.count(pending_txs) == state.block_has_at_least_txs_in_block
+    should_form_block = it_is_time and met_transaction_number_limit and !state.wait_for_enqueue and !is_empty_block
+
+    should_form_block =
+      case {should_form_block, state.force_block_submission_countdown} do
+        {false, nil} ->
+          case !state.wait_for_enqueue and !is_empty_block do
+            true -> {false, Time.utc_now()}
+            false -> false
+          end
+
+        {false, force_block_submission_countdown} ->
+          !state.wait_for_enqueue and !is_empty_block and
+            Time.diff(Time.utc_now(), force_block_submission_countdown, :millisecond) <
+              state.force_block_submission_after_ms
+
+        {true, _} ->
+          should_form_block
+      end
 
     _ =
       if !should_form_block do
@@ -505,7 +543,10 @@ defmodule OMG.ChildChain.BlockQueue.Core do
           block_submit_every_nth: state.block_submit_every_nth,
           wait_for_enqueue: state.wait_for_enqueue,
           it_is_time: it_is_time,
-          is_empty_block: is_empty_block
+          is_empty_block: is_empty_block,
+          force_block_submission_countdown_diff:
+            Time.diff(Time.utc_now(), state.force_block_submission_countdown, :millisecond),
+          force_block_submission_after_ms: state.force_block_submission_after_ms
         }
 
         Logger.debug("Skipping forming block because: #{inspect(log_data)}")

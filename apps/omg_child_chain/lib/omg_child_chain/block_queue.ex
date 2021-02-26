@@ -166,12 +166,12 @@ defmodule OMG.ChildChain.BlockQueue do
     {:ok, ethereum_height} = EthereumHeight.get()
 
     mined_blknum = RootChain.get_mined_child_block()
-    {_, is_empty_block} = OMG.State.get_status()
+    {_, is_empty_block, pending_txs} = OMG.State.get_status()
 
     _ = Logger.debug("Ethereum at \#'#{inspect(ethereum_height)}', mined child at \#'#{inspect(mined_blknum)}'")
 
     state1 =
-      case Core.set_ethereum_status(state, ethereum_height, mined_blknum, is_empty_block) do
+      case Core.set_ethereum_status(state, ethereum_height, mined_blknum, is_empty_block, pending_txs) do
         {:do_form_block, state1} ->
           :ok = OMG.State.form_block()
           state1

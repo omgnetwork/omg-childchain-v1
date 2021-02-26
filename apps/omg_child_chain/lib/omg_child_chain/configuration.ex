@@ -38,6 +38,16 @@ defmodule OMG.ChildChain.Configuration do
     Application.fetch_env!(@app, :block_submit_every_nth)
   end
 
+  @spec block_has_at_least_txs_in_block() :: no_return() | pos_integer()
+  def block_has_at_least_txs_in_block() do
+    Application.fetch_env!(@app, :block_has_at_least_txs_in_block)
+  end
+
+  @spec force_block_submission_after_ms() :: no_return() | pos_integer()
+  def force_block_submission_after_ms() do
+    Application.fetch_env!(@app, :force_block_submission_after_ms)
+  end
+
   @spec block_submit_max_gas_price() :: no_return() | pos_integer()
   def block_submit_max_gas_price() do
     Application.fetch_env!(@app, :block_submit_max_gas_price)
