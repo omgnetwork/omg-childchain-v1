@@ -52,6 +52,9 @@ config :omg,
   fee_claimer_address: Base.decode16!("DEAD000000000000000000000000000000000000")
 
 config :omg_child_chain,
+  block_submit_every_nth: String.to_integer(System.get_env("BLOCK_SUBMIT_EVERY_NTH", "1")),
+  block_has_at_least_txs_in_block: String.to_integer(System.get_env("BLOCK_HAS_AT_LEAST_TXS_IN_BLOCK", "1")),
+  force_block_submission_after_ms: String.to_integer(System.get_env("FORCE_BLOCK_SUBMISSION_AFTER_MS", "70000")),
   block_queue_eth_height_check_interval_ms: 100,
   fee_adapter_check_interval_ms: 1_000,
   fee_buffer_duration_ms: 5_000,

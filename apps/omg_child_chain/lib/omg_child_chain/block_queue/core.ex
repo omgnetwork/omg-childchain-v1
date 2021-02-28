@@ -192,17 +192,16 @@ defmodule OMG.ChildChain.BlockQueue.Core do
           Core.t(),
           BlockQueue.eth_height(),
           BlockQueue.plasma_block_num(),
-          boolean(),
           non_neg_integer()
         ) ::
           {:do_form_block, Core.t()} | {:dont_form_block, Core.t()}
-  def set_ethereum_status(state, parent_height, mined_child_block_num, is_empty_block, pending_txs) do
+  def set_ethereum_status(state, parent_height, mined_child_block_num, pending_txs_count) do
     new_state =
       %{state | parent_height: parent_height}
       |> set_mined(mined_child_block_num)
       |> adjust_gas_price()
 
-    case should_form_block?(new_state, is_empty_block, pending_txs) do
+    case should_form_block?(new_state, pending_txs_count) do
       true ->
         {:do_form_block, %{new_state | force_block_submission_countdown: nil, wait_for_enqueue: true}}
 
@@ -510,12 +509,14 @@ defmodule OMG.ChildChain.BlockQueue.Core do
     fn {blknum, _} -> next_blknum_to_mine(state) <= blknum and blknum <= state.formed_child_block_num end
   end
 
-  @spec should_form_block?(Core.t(), boolean(), non_neg_integer()) :: boolean() | {false, Time.t()}
-  defp should_form_block?(state, is_empty_block, pending_txs) do
+  @spec should_form_block?(Core.t(), non_neg_integer()) :: boolean() | {false, Time.t()}
+  defp should_form_block?(state, pending_txs_count) do
     # e.g. if we're at 15th Ethereum block now, last enqueued was at 14th, we're submitting a child chain block on every
     # single Ethereum block (`block_submit_every_nth` == 1), then we could form a new block (`it_is_time` is `true`)
+    is_empty_block = pending_txs_count == 0
     it_is_time = state.parent_height - state.last_enqueued_block_at_height >= state.block_submit_every_nth
-    met_transaction_number_limit = Enum.count(pending_txs) == state.block_has_at_least_txs_in_block
+
+    met_transaction_number_limit = pending_txs_count == state.block_has_at_least_txs_in_block
     should_form_block = it_is_time and met_transaction_number_limit and !state.wait_for_enqueue and !is_empty_block
 
     should_form_block =
@@ -527,9 +528,11 @@ defmodule OMG.ChildChain.BlockQueue.Core do
           end
 
         {false, force_block_submission_countdown} ->
-          !state.wait_for_enqueue and !is_empty_block and
-            Time.diff(Time.utc_now(), force_block_submission_countdown, :millisecond) <
-              state.force_block_submission_after_ms
+          !state.wait_for_enqueue and !is_empty_block and it_is_time
+
+        # and
+        #   Time.diff(Time.utc_now(), force_block_submission_countdown, :millisecond) <
+        #     state.force_block_submission_after_ms
 
         {true, _} ->
           should_form_block
@@ -544,12 +547,21 @@ defmodule OMG.ChildChain.BlockQueue.Core do
           wait_for_enqueue: state.wait_for_enqueue,
           it_is_time: it_is_time,
           is_empty_block: is_empty_block,
-          force_block_submission_countdown_diff:
-            Time.diff(Time.utc_now(), state.force_block_submission_countdown, :millisecond),
           force_block_submission_after_ms: state.force_block_submission_after_ms
         }
 
-        Logger.debug("Skipping forming block because: #{inspect(log_data)}")
+        case state.force_block_submission_countdown do
+          nil ->
+            Logger.debug("Skipping forming block because: #{inspect(log_data)}")
+
+          _ ->
+            Map.merge(log_data, %{
+              force_block_submission_countdown_diff:
+                Time.diff(Time.utc_now(), state.force_block_submission_countdown, :millisecond)
+            })
+
+            Logger.debug("Skipping forming block because: #{inspect(log_data)}")
+        end
       end
 
     should_form_block

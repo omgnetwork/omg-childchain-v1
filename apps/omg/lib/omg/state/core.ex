@@ -393,11 +393,9 @@ defmodule OMG.State.Core do
   @doc """
       Gets the current block's height and whether at the beginning of the block
   """
-  @spec get_status(t()) :: {non_neg_integer(), boolean(), non_neg_integer()}
+  @spec get_status(t()) :: non_neg_integer()
   def get_status(state) do
-    count = Enum.count(state.pending_txs)
-    is_beginning = state.tx_index == 0 && count == 0
-    {state.height, is_beginning, count}
+    Enum.count(state.pending_txs)
   end
 
   defp add_pending_tx(%Core{pending_txs: pending_txs, tx_index: tx_index} = state, %Transaction.Recovered{} = new_tx) do
