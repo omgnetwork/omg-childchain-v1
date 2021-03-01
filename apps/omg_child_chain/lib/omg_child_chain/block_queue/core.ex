@@ -108,7 +108,7 @@ defmodule OMG.ChildChain.BlockQueue.Core do
     child_block_interval: nil,
     block_submit_every_nth: 1,
     block_has_at_least_txs_in_block: 1,
-    force_block_submission_after_ms: 70000,
+    force_block_submission_after_ms: 70_000,
     force_block_submission_countdown: nil,
     finality_threshold: 12,
     gas_price_adj_params: %GasPriceAdjustment{}
@@ -422,7 +422,7 @@ defmodule OMG.ChildChain.BlockQueue.Core do
       state
     else
       new_gas_price = calculate_gas_price(state)
-      # _ = Logger.debug("using new gas price '#{inspect(new_gas_price)}'")
+      _ = Logger.debug("using new gas price '#{inspect(new_gas_price)}'")
 
       new_state =
         state

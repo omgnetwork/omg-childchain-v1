@@ -1,3 +1,17 @@
+# Copyright 2019-2020 OmiseGO Pte Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 defmodule OMG.ChildChain.BlockQueue.Core.BlockForming do
   alias OMG.ChildChain.BlockQueue.Core
   require Logger
@@ -15,30 +29,31 @@ defmodule OMG.ChildChain.BlockQueue.Core.BlockForming do
     met_transaction_number_limit = pending_txs_count >= state.block_has_at_least_txs_in_block
     should_form_block = it_is_time and met_transaction_number_limit and !state.wait_for_enqueue and !is_empty_block
 
-    should_form_block =
-      case {should_form_block, state.force_block_submission_countdown} do
-        {false, nil} ->
-          # if only the block_has_at_least_txs_in_block is not met, the caller should start the timer
-          case it_is_time and !state.wait_for_enqueue and !is_empty_block do
-            true ->
-              {false, Time.utc_now()}
-
-            _ ->
-              false
-          end
-
-        {false, force_block_submission_countdown} ->
-          !state.wait_for_enqueue and !is_empty_block and it_is_time and
-            Time.diff(Time.utc_now(), force_block_submission_countdown, :millisecond) >
-              state.force_block_submission_after_ms
-
-        {true, _} ->
-          should_form_block
-      end
+    should_form_block = block_requirements(state, should_form_block, is_empty_block, it_is_time)
 
     log(state, it_is_time, is_empty_block, should_form_block)
 
     should_form_block
+  end
+
+  defp block_requirements(_, true, _, _) do
+    true
+  end
+
+  defp block_requirements(%{force_block_submission_countdown: nil} = state, false, is_empty_block, it_is_time) do
+    case it_is_time and !state.wait_for_enqueue and !is_empty_block do
+      true ->
+        {false, Time.utc_now()}
+
+      _ ->
+        false
+    end
+  end
+
+  defp block_requirements(state, false, is_empty_block, it_is_time) do
+    !state.wait_for_enqueue and !is_empty_block and it_is_time and
+      Time.diff(Time.utc_now(), state.force_block_submission_countdown, :millisecond) >
+        state.force_block_submission_after_ms
   end
 
   defp log(state, it_is_time, is_empty_block, false) do
