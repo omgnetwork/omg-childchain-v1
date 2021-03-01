@@ -419,15 +419,15 @@ defmodule OMG.ChildChain.BlockQueue.Core do
     }
   end
 
-  defp adjust_gas_price(
-         %Core{blocks: blocks, parent_height: parent_height, last_parent_height: last_parent_height} = state
-       ) do
+  defp adjust_gas_price(state) do
+    %Core{blocks: blocks, parent_height: parent_height, last_parent_height: last_parent_height} = state
+
     if parent_height <= last_parent_height or
          !Enum.find(blocks, to_mined_block_filter(state)) do
       state
     else
       new_gas_price = calculate_gas_price(state)
-      _ = Logger.debug("using new gas price '#{inspect(new_gas_price)}'")
+      # _ = Logger.debug("using new gas price '#{inspect(new_gas_price)}'")
 
       new_state =
         state

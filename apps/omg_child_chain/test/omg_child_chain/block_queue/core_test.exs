@@ -644,10 +644,10 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
 
       # make chains where no child blocks ever get mined to bloat the object
       long = make_chain(empty, long_length)
-      long_size = size(long)
+      long_size = size(long.blocks)
 
-      empty_size = size(empty)
-      one_block_size = size(make_chain(empty, 1)) - empty_size
+      empty_size = size(empty.blocks)
+      one_block_size = size(make_chain(empty, 1).blocks) - empty_size
 
       # sanity check if we haven't removed blocks to early
       assert long_size - empty_size >= one_block_size * long_length
@@ -657,6 +657,7 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
         long
         |> Core.set_ethereum_status(long_length, (long_length - short_length) * 1000, 1)
         |> elem(1)
+        |> Map.get(:blocks)
         |> size()
 
       assert long_mined_size - empty_size < (short_length + empty.finality_threshold + 1) * one_block_size
@@ -664,16 +665,13 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
 
     # helper function makes a chain that have size blocks
     defp make_chain(base, size) do
-      if size > 0,
-        do:
-          Enum.reduce(1..size, base, fn hash, state ->
-            Core.enqueue_block(state, hash, hash * @child_block_interval, hash)
-          end),
-        else: base
+      Enum.reduce(1..size, base, fn hash, state ->
+        Core.enqueue_block(state, hash, hash * @child_block_interval, hash)
+      end)
     end
 
-    defp size(state) do
-      state |> :erlang.term_to_binary() |> byte_size()
+    defp size(data) do
+      Enum.count(data)
     end
   end
 
