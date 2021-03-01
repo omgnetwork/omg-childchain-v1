@@ -538,7 +538,7 @@ defmodule OMG.State.CoreTest do
   @tag fixtures: [:alice, :bob, :state_alice_deposit]
   test "can't spend own output", %{bob: bob, state_alice_deposit: state} do
     # The transaction here is designed so that it would spend its own output. Sanity checking first
-    0 = Core.get_status(state)
+    0 = Core.get_pending_transaction_count(state)
     recovered2 = TestHelper.create_recovered([{1000, 0, 0, bob}], @eth, [{bob, 6}])
 
     state
@@ -832,14 +832,14 @@ defmodule OMG.State.CoreTest do
   @tag fixtures: [:state_empty]
   test "Getting current block height with one formed block", %{state_empty: state} do
     {:ok, {_, _}, new_state} = form_block_check(state)
-    assert 0 = Core.get_status(new_state)
+    assert 0 = Core.get_pending_transaction_count(new_state)
   end
 
   @tag fixtures: [:alice, :state_empty]
   test "beginning of block changes when transactions executed and block formed",
        %{alice: alice, state_empty: state} do
     # at empty state it is at the beginning of the next block
-    assert 0 = Core.get_status(state)
+    assert 0 = Core.get_pending_transaction_count(state)
 
     # when we execute a tx it isn't at the beginning
     {:ok, _, state} =
@@ -847,12 +847,12 @@ defmodule OMG.State.CoreTest do
       |> TestHelper.do_deposit(alice, %{amount: 10, currency: @eth, blknum: 1})
       |> Core.exec(TestHelper.create_recovered([{1, 0, 0, alice}], @eth, [{alice, 9}]), @fee)
 
-    assert 1 = Core.get_status(state)
+    assert 1 = Core.get_pending_transaction_count(state)
 
     # when a block has been newly formed it is at the beginning
     {:ok, _, state} = form_block_check(state)
 
-    assert 0 = Core.get_status(state)
+    assert 0 = Core.get_pending_transaction_count(state)
   end
 
   @tag fixtures: [:alice, :bob, :state_alice_deposit]

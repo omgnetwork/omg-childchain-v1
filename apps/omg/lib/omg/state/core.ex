@@ -391,10 +391,10 @@ defmodule OMG.State.Core do
   end
 
   @doc """
-      Gets the current block's height and whether at the beginning of the block
+      Pending transaction count
   """
-  @spec get_status(t()) :: non_neg_integer()
-  def get_status(state) do
+  @spec get_pending_transaction_count(t()) :: non_neg_integer()
+  def get_pending_transaction_count(state) do
     Enum.count(state.pending_txs)
   end
 

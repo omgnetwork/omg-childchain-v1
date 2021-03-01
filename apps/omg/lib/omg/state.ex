@@ -127,14 +127,12 @@ defmodule OMG.State do
   end
 
   @doc """
-  Returns the current `blknum` and whether at the beginning of a block.
-
-  The beginning of the block is `true/false` depending on whether there have been no transactions executed yet for
+  Returns the number of executed transactions for
   the current child chain block
   """
-  @spec get_status() :: non_neg_integer()
-  def get_status() do
-    GenServer.call(__MODULE__, :get_status, @timeout)
+  @spec get_pending_transaction_count() :: non_neg_integer()
+  def get_pending_transaction_count() do
+    GenServer.call(__MODULE__, :get_pending_transaction_count, @timeout)
   end
 
   ### Server
@@ -254,8 +252,8 @@ defmodule OMG.State do
     {:reply, Core.utxo_exists?(utxo_pos, new_state), new_state}
   end
 
-  def handle_call(:get_status, _from, state) do
-    {:reply, Core.get_status(state), state}
+  def handle_call(:get_pending_transaction_count, _from, state) do
+    {:reply, Core.get_pending_transaction_count(state), state}
   end
 
   def handle_cast(:form_block, state) do

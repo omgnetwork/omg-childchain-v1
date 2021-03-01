@@ -166,7 +166,7 @@ defmodule OMG.ChildChain.BlockQueue do
     {:ok, ethereum_height} = EthereumHeight.get()
 
     mined_blknum = RootChain.get_mined_child_block()
-    pending_txs_count = OMG.State.get_status()
+    pending_txs_count = OMG.State.get_pending_transaction_count()
 
     _ = Logger.debug("Ethereum at \#'#{inspect(ethereum_height)}', mined child at \#'#{inspect(mined_blknum)}'")
 

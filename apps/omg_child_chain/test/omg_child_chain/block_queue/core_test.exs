@@ -112,11 +112,11 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
       assert [%{hash: "7", nonce: 7}, %{hash: "8", nonce: 8}, %{hash: "9", nonce: 9}] = Core.get_blocks_to_submit(state)
 
       # simulate geth catching up
-      assert {:dont_form_block, new_state} = Core.set_ethereum_status(state, 7, 7000, true)
+      assert {:dont_form_block, new_state} = Core.set_ethereum_status(state, 7, 7000, 0)
       assert [%{hash: "8", nonce: 8}, %{hash: "9", nonce: 9}] = Core.get_blocks_to_submit(new_state)
       # still don't want to form blocks
-      assert {:dont_form_block, _new_state} = Core.set_ethereum_status(state, 8, 7000, true)
-      assert {:dont_form_block, _new_state} = Core.set_ethereum_status(state, 9, 8000, true)
+      assert {:dont_form_block, _new_state} = Core.set_ethereum_status(state, 8, 7000, 0)
+      assert {:dont_form_block, _new_state} = Core.set_ethereum_status(state, 9, 8000, 0)
     end
 
     test "Recovers after restart even when only empty blocks were mined" do
@@ -221,6 +221,55 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
   end
 
   describe "set_ethereum_status/4" do
+    test "offer timer when block_has_at_least_txs_in_block is not met", %{empty: empty} do
+      {:dont_form_block, %{force_block_submission_countdown: nil} = queue} = Core.set_ethereum_status(empty, 0, 0, 1)
+
+      # there's one transaction in the block, 2 is the limit (block is not empty)
+      # ethereum has progressed one block ahead, so it_is_time is true
+      # wait_for_enqueue is false
+      assert {:dont_form_block, %{force_block_submission_countdown: force_block_submission_countdown}} =
+               queue
+               |> Map.put(:block_has_at_least_txs_in_block, 2)
+               |> Core.set_ethereum_status(1, 0, 1)
+
+      refute is_nil(force_block_submission_countdown)
+
+      # there's one transaction in the block, 2 is the limit (block is not empty)
+      # ethereum has progressed one block ahead, so it_is_time is true
+      # wait_for_enqueue is true
+      assert {:dont_form_block, %{force_block_submission_countdown: force_block_submission_countdown}} =
+               queue
+               |> Map.put(:block_has_at_least_txs_in_block, 2)
+               |> Map.put(:wait_for_enqueue, true)
+               |> Core.set_ethereum_status(1, 0, 1)
+
+      assert is_nil(force_block_submission_countdown)
+    end
+
+    test "form block when force_block_submission_after_ms is met", %{empty: empty} do
+      {:dont_form_block, %{force_block_submission_countdown: nil} = queue} = Core.set_ethereum_status(empty, 0, 0, 1)
+
+      # there's one transaction in the block, 2 is the limit (block is not empty)
+      # ethereum has progressed one block ahead, so it_is_time is true
+      # wait_for_enqueue is false
+      assert {:dont_form_block, state} =
+               queue
+               |> Map.put(:block_has_at_least_txs_in_block, 2)
+               |> Core.set_ethereum_status(1, 0, 1)
+
+      # there's one transaction in the block, 2 is the limit (block is not empty)
+      # ethereum has progressed one block ahead, so it_is_time is true
+      # wait_for_enqueue is false
+      force_block_submission_after_ms = 2
+      Process.sleep(force_block_submission_after_ms + 1)
+
+      assert {:do_form_block, %{force_block_submission_countdown: nil, wait_for_enqueue: true}} =
+               state
+               |> Map.put(:block_has_at_least_txs_in_block, 2)
+               |> Map.put(:force_block_submission_after_ms, force_block_submission_after_ms)
+               |> Core.set_ethereum_status(1, 0, 1)
+    end
+
     test "Asks to form block when ethereum progresses", %{empty: empty} do
       {:dont_form_block, queue} = Core.set_ethereum_status(empty, 0, 0, 1)
       assert {:do_form_block, _} = Core.set_ethereum_status(queue, 1, 0, 1)
@@ -321,7 +370,7 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
       assert {:dont_form_block, _} =
                queue
                |> Core.enqueue_block("1", 1000, 0)
-               |> Core.set_ethereum_status(1, 0, true)
+               |> Core.set_ethereum_status(1, 0, 0)
 
       # Ethereum advanced since enqueue and block isn't empty -> order forming of next block
       assert {:do_form_block, queue} =
@@ -372,7 +421,7 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
     test "A new block is submitted after enqueuing", %{empty: empty} do
       assert [%{num: 2000}] =
                empty
-               |> Core.set_ethereum_status(0, 1000, false)
+               |> Core.set_ethereum_status(0, 1000, 1)
                |> elem(1)
                |> Core.enqueue_block("2", 2000, 0)
                |> Core.get_blocks_to_submit()
@@ -388,7 +437,7 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
         |> Core.enqueue_block("3", 3000, 2)
         |> Core.enqueue_block("4", 4000, 3)
         |> Core.enqueue_block("5", 5000, 4)
-        |> Core.set_ethereum_status(3, 2000, false)
+        |> Core.set_ethereum_status(3, 2000, 1)
 
       assert [%{num: 3000}, %{num: 4000}, %{num: 5000}] = Core.get_blocks_to_submit(queue)
     end
@@ -418,7 +467,7 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
          %{empty_high_max_gas_price: empty} do
       assert [%{gas_price: 20_000_000_000}] =
                empty
-               |> Core.set_ethereum_status(10, 0, false)
+               |> Core.set_ethereum_status(10, 0, 1)
                |> elem(1)
                |> Core.enqueue_block("1", 1000, 10)
                |> Core.get_blocks_to_submit()
@@ -442,7 +491,7 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
                |> Core.set_ethereum_status(0, 0, 1)
                |> elem(1)
                |> Core.enqueue_block("1", 1000, 10)
-               |> Core.set_ethereum_status(10, 0, false)
+               |> Core.set_ethereum_status(10, 0, 1)
                |> elem(1)
                |> Core.get_blocks_to_submit()
     end
@@ -561,7 +610,7 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
                |> elem(1)
                |> Core.set_ethereum_status(2, 0, 1)
                |> elem(1)
-               |> Core.set_ethereum_status(4, 0, false)
+               |> Core.set_ethereum_status(4, 0, 1)
                |> elem(1)
                |> Core.get_blocks_to_submit()
     end
@@ -577,7 +626,7 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
       state =
         Enum.reduce(2..1000, state, fn eth_height, state ->
           state
-          |> Core.set_ethereum_status(eth_height - 1, (eth_height - 2) * 1000, false)
+          |> Core.set_ethereum_status(eth_height - 1, (eth_height - 2) * 1000, 1)
           |> elem(1)
           |> Core.enqueue_block("#{eth_height}", eth_height * 1000, eth_height - 2)
         end)
@@ -587,7 +636,7 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
       # no more successful submissions can change the price
       assert [%{gas_price: 5}, %{gas_price: 5}] =
                state
-               |> Core.set_ethereum_status(1000, 999_000, false)
+               |> Core.set_ethereum_status(1000, 999_000, 1)
                |> elem(1)
                |> Core.enqueue_block("1001", 1_001_000, 999)
                |> Core.get_blocks_to_submit()
@@ -606,7 +655,7 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
       # Despite Ethereum height changing multiple times, gas price does not grow since no new blocks are mined
       state =
         Enum.reduce(1..10, state, fn eth_height, state ->
-          {_, state} = Core.set_ethereum_status(state, eth_height, 1000, false)
+          {_, state} = Core.set_ethereum_status(state, eth_height, 1000, 1)
           state
         end)
 
