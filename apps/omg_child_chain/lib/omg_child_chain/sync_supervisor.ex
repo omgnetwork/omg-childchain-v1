@@ -66,6 +66,8 @@ defmodule OMG.ChildChain.SyncSupervisor do
     block_queue_eth_height_check_interval_ms = Configuration.block_queue_eth_height_check_interval_ms()
     submission_finality_margin = Configuration.submission_finality_margin()
     block_submit_every_nth = Configuration.block_submit_every_nth()
+    block_has_at_least_txs_in_block = Configuration.block_has_at_least_txs_in_block()
+    force_block_submission_after_ms = Configuration.force_block_submission_after_ms()
     block_submit_max_gas_price = Configuration.block_submit_max_gas_price()
     block_submit_stall_threshold_blocks = OMG.ChildChain.Configuration.block_submit_stall_threshold_blocks()
     ethereum_events_check_interval_ms = OMG.Configuration.ethereum_events_check_interval_ms()
@@ -85,6 +87,8 @@ defmodule OMG.ChildChain.SyncSupervisor do
          block_queue_eth_height_check_interval_ms: block_queue_eth_height_check_interval_ms,
          submission_finality_margin: submission_finality_margin,
          block_submit_every_nth: block_submit_every_nth,
+         block_has_at_least_txs_in_block: block_has_at_least_txs_in_block,
+         force_block_submission_after_ms: force_block_submission_after_ms,
          block_submit_max_gas_price: block_submit_max_gas_price,
          child_block_interval: child_block_interval
        ]},

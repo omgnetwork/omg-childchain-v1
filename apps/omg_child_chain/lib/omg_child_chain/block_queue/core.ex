@@ -71,8 +71,8 @@ defmodule OMG.ChildChain.BlockQueue.Core do
 
   alias OMG.ChildChain.BlockQueue
   alias OMG.ChildChain.BlockQueue.Core
+  alias OMG.ChildChain.BlockQueue.Core.BlockForming
   alias OMG.ChildChain.BlockQueue.GasPriceAdjustment
-
   use OMG.Utils.LoggerExt
 
   defmodule BlockSubmission do
@@ -107,6 +107,9 @@ defmodule OMG.ChildChain.BlockQueue.Core do
     # config:
     child_block_interval: nil,
     block_submit_every_nth: 1,
+    block_has_at_least_txs_in_block: 1,
+    force_block_submission_after_ms: 70_000,
+    force_block_submission_countdown: nil,
     finality_threshold: 12,
     gas_price_adj_params: %GasPriceAdjustment{}
   ]
@@ -129,6 +132,12 @@ defmodule OMG.ChildChain.BlockQueue.Core do
           child_block_interval: pos_integer(),
           # configure to trigger forming a child chain block every this many Ethereum blocks are mined since enqueueing
           block_submit_every_nth: pos_integer(),
+          # configurable property so that we wait until blocks have sufficient enough transactions
+          block_has_at_least_txs_in_block: pos_integer(),
+          # we don't want to wait for too long for incoming transactions
+          force_block_submission_after_ms: pos_integer(),
+          # helper for force_block_submission_after_ms
+          force_block_submission_countdown: Time.t() | nil,
           # depth of max reorg we take into account
           finality_threshold: pos_integer(),
           # the gas price adjustment strategy parameters
@@ -179,18 +188,23 @@ defmodule OMG.ChildChain.BlockQueue.Core do
   Based on that, decides whether new block forming should be triggered as well as the gas price to use for subsequent
   submissions.
   """
-  @spec set_ethereum_status(Core.t(), BlockQueue.eth_height(), BlockQueue.plasma_block_num(), boolean()) ::
+  @spec set_ethereum_status(Core.t(), BlockQueue.eth_height(), BlockQueue.plasma_block_num(), non_neg_integer()) ::
           {:do_form_block, Core.t()} | {:dont_form_block, Core.t()}
-  def set_ethereum_status(state, parent_height, mined_child_block_num, is_empty_block) do
+  def set_ethereum_status(state, parent_height, mined_child_block_num, pending_txs_count) do
     new_state =
       %{state | parent_height: parent_height}
       |> set_mined(mined_child_block_num)
       |> adjust_gas_price()
 
-    if should_form_block?(new_state, is_empty_block) do
-      {:do_form_block, %{new_state | wait_for_enqueue: true}}
-    else
-      {:dont_form_block, new_state}
+    case BlockForming.should_form_block?(new_state, pending_txs_count) do
+      true ->
+        {:do_form_block, %{new_state | force_block_submission_countdown: nil, wait_for_enqueue: true}}
+
+      false ->
+        {:dont_form_block, new_state}
+
+      {false, utc_now} ->
+        {:dont_form_block, %{new_state | force_block_submission_countdown: utc_now}}
     end
   end
 
@@ -400,9 +414,9 @@ defmodule OMG.ChildChain.BlockQueue.Core do
     }
   end
 
-  defp adjust_gas_price(
-         %Core{blocks: blocks, parent_height: parent_height, last_parent_height: last_parent_height} = state
-       ) do
+  defp adjust_gas_price(state) do
+    %Core{blocks: blocks, parent_height: parent_height, last_parent_height: last_parent_height} = state
+
     if parent_height <= last_parent_height or
          !Enum.find(blocks, to_mined_block_filter(state)) do
       state
@@ -422,19 +436,21 @@ defmodule OMG.ChildChain.BlockQueue.Core do
   # Calculates the gas price basing on simple strategy to raise the gas price by gas_price_raising_factor
   # when gap of mined parent blocks is growing and droping the price by gas_price_lowering_factor otherwise
   @spec calculate_gas_price(Core.t()) :: pos_integer()
-  defp calculate_gas_price(%Core{
-         formed_child_block_num: formed_child_block_num,
-         mined_child_block_num: mined_child_block_num,
-         gas_price_to_use: gas_price_to_use,
-         parent_height: parent_height,
-         gas_price_adj_params: %GasPriceAdjustment{
-           gas_price_lowering_factor: gas_price_lowering_factor,
-           gas_price_raising_factor: gas_price_raising_factor,
-           eth_gap_without_child_blocks: eth_gap_without_child_blocks,
-           max_gas_price: max_gas_price,
-           last_block_mined: {lastchecked_parent_height, lastchecked_mined_block_num}
-         }
-       }) do
+  defp calculate_gas_price(state) do
+    %{
+      formed_child_block_num: formed_child_block_num,
+      mined_child_block_num: mined_child_block_num,
+      gas_price_to_use: gas_price_to_use,
+      parent_height: parent_height,
+      gas_price_adj_params: %GasPriceAdjustment{
+        gas_price_lowering_factor: gas_price_lowering_factor,
+        gas_price_raising_factor: gas_price_raising_factor,
+        eth_gap_without_child_blocks: eth_gap_without_child_blocks,
+        max_gas_price: max_gas_price,
+        last_block_mined: {lastchecked_parent_height, lastchecked_mined_block_num}
+      }
+    } = state
+
     multiplier =
       with true <- blocks_needs_be_mined?(formed_child_block_num, mined_child_block_num),
            true <- eth_blocks_gap_filled?(parent_height, lastchecked_parent_height, eth_gap_without_child_blocks),
@@ -488,30 +504,6 @@ defmodule OMG.ChildChain.BlockQueue.Core do
   @spec to_mined_block_filter(Core.t()) :: ({pos_integer, BlockSubmission.t()} -> boolean)
   defp to_mined_block_filter(state) do
     fn {blknum, _} -> next_blknum_to_mine(state) <= blknum and blknum <= state.formed_child_block_num end
-  end
-
-  @spec should_form_block?(Core.t(), boolean()) :: boolean()
-  defp should_form_block?(state, is_empty_block) do
-    # e.g. if we're at 15th Ethereum block now, last enqueued was at 14th, we're submitting a child chain block on every
-    # single Ethereum block (`block_submit_every_nth` == 1), then we could form a new block (`it_is_time` is `true`)
-    it_is_time = state.parent_height - state.last_enqueued_block_at_height >= state.block_submit_every_nth
-    should_form_block = it_is_time and !state.wait_for_enqueue and !is_empty_block
-
-    _ =
-      if !should_form_block do
-        log_data = %{
-          parent_height: state.parent_height,
-          last_enqueued_block_at_height: state.last_enqueued_block_at_height,
-          block_submit_every_nth: state.block_submit_every_nth,
-          wait_for_enqueue: state.wait_for_enqueue,
-          it_is_time: it_is_time,
-          is_empty_block: is_empty_block
-        }
-
-        Logger.debug("Skipping forming block because: #{inspect(log_data)}")
-      end
-
-    should_form_block
   end
 
   defp calc_nonce(height, interval) do
