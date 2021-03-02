@@ -72,8 +72,8 @@ defmodule OMG.ChildChain.BlockQueue.Core do
   alias OMG.ChildChain.BlockQueue
   alias OMG.ChildChain.BlockQueue.Core
   alias OMG.ChildChain.BlockQueue.Core.BlockForming
-  alias OMG.ChildChain.BlockQueue.GasPriceAdjustment
-  use OMG.Utils.LoggerExt
+
+  require Logger
 
   defmodule BlockSubmission do
     @moduledoc """
@@ -103,15 +103,13 @@ defmodule OMG.ChildChain.BlockQueue.Core do
     :wait_for_enqueue,
     last_parent_height: 0,
     formed_child_block_num: 0,
-    gas_price_to_use: 20_000_000_000,
     # config:
     child_block_interval: nil,
     block_submit_every_nth: 1,
     block_has_at_least_txs_in_block: 1,
     force_block_submission_after_ms: 70_000,
     force_block_submission_countdown: nil,
-    finality_threshold: 12,
-    gas_price_adj_params: %GasPriceAdjustment{}
+    finality_threshold: 12
   ]
 
   @type t() :: %__MODULE__{
@@ -124,8 +122,6 @@ defmodule OMG.ChildChain.BlockQueue.Core do
           parent_height: BlockQueue.eth_height(),
           # whether we're pending an enqueue signal with a new block
           wait_for_enqueue: boolean(),
-          # gas price to use when (re)submitting transactions
-          gas_price_to_use: pos_integer(),
           last_enqueued_block_at_height: pos_integer(),
           # CONFIG CONSTANTS below
           # spacing of child blocks in RootChain contract, being the amount of deposit decimals per child block
@@ -140,8 +136,6 @@ defmodule OMG.ChildChain.BlockQueue.Core do
           force_block_submission_countdown: Time.t() | nil,
           # depth of max reorg we take into account
           finality_threshold: pos_integer(),
-          # the gas price adjustment strategy parameters
-          gas_price_adj_params: GasPriceAdjustment.t(),
           last_parent_height: non_neg_integer()
         }
 
@@ -191,10 +185,7 @@ defmodule OMG.ChildChain.BlockQueue.Core do
   @spec set_ethereum_status(Core.t(), BlockQueue.eth_height(), BlockQueue.plasma_block_num(), non_neg_integer()) ::
           {:do_form_block, Core.t()} | {:dont_form_block, Core.t()}
   def set_ethereum_status(state, parent_height, mined_child_block_num, pending_txs_count) do
-    new_state =
-      %{state | parent_height: parent_height}
-      |> set_mined(mined_child_block_num)
-      |> adjust_gas_price()
+    new_state = set_mined(%{state | parent_height: parent_height}, mined_child_block_num)
 
     case BlockForming.should_form_block?(new_state, pending_txs_count) do
       true ->
@@ -229,12 +220,16 @@ defmodule OMG.ChildChain.BlockQueue.Core do
   @spec get_blocks_to_submit(Core.t()) :: [BlockQueue.encoded_signed_tx()]
   def get_blocks_to_submit(%{blocks: blocks, formed_child_block_num: formed} = state) do
     _ = Logger.debug("preparing blocks #{inspect(next_blknum_to_mine(state))}..#{inspect(formed)} for submission")
+    gas_price = apply(Gas, :get, [Gas.Integration.Pulse])
+    # %Gas{fast: 76.0, fastest: 93.0, low: 40.8, name: "Etherscan", standard: 68.0}
+
+    wei_gas = gas_price.standard * 1_000_000_000
 
     blocks
     |> Enum.filter(to_mined_block_filter(state))
     |> Enum.map(fn {_blknum, block} -> block end)
     |> Enum.sort_by(& &1.num)
-    |> Enum.map(&Map.put(&1, :gas_price, state.gas_price_to_use))
+    |> Enum.map(&Map.put(&1, :gas_price, gas))
   end
 
   # TODO: consider moving this logic to separate module
@@ -401,101 +396,6 @@ defmodule OMG.ChildChain.BlockQueue.Core do
     top_known_block = max(mined_child_block_num, state.formed_child_block_num)
 
     %{state | formed_child_block_num: top_known_block, mined_child_block_num: mined_child_block_num, blocks: blocks}
-  end
-
-  # Updates gas price to use basing on :calculate_gas_price function, updates current parent height
-  # and last mined child block number in the state which used by gas price calculations
-  @spec adjust_gas_price(Core.t()) :: Core.t()
-  defp adjust_gas_price(%Core{gas_price_adj_params: %GasPriceAdjustment{last_block_mined: nil} = gas_params} = state) do
-    # initializes last block mined
-    %{
-      state
-      | gas_price_adj_params: GasPriceAdjustment.with(gas_params, state.parent_height, state.mined_child_block_num)
-    }
-  end
-
-  defp adjust_gas_price(state) do
-    %Core{blocks: blocks, parent_height: parent_height, last_parent_height: last_parent_height} = state
-
-    if parent_height <= last_parent_height or
-         !Enum.find(blocks, to_mined_block_filter(state)) do
-      state
-    else
-      new_gas_price = calculate_gas_price(state)
-      _ = Logger.debug("using new gas price '#{inspect(new_gas_price)}'")
-
-      new_state =
-        state
-        |> set_gas_price(new_gas_price)
-        |> update_last_checked_mined_block_num()
-
-      %{new_state | last_parent_height: parent_height}
-    end
-  end
-
-  # Calculates the gas price basing on simple strategy to raise the gas price by gas_price_raising_factor
-  # when gap of mined parent blocks is growing and droping the price by gas_price_lowering_factor otherwise
-  @spec calculate_gas_price(Core.t()) :: pos_integer()
-  defp calculate_gas_price(state) do
-    %{
-      formed_child_block_num: formed_child_block_num,
-      mined_child_block_num: mined_child_block_num,
-      gas_price_to_use: gas_price_to_use,
-      parent_height: parent_height,
-      gas_price_adj_params: %GasPriceAdjustment{
-        gas_price_lowering_factor: gas_price_lowering_factor,
-        gas_price_raising_factor: gas_price_raising_factor,
-        eth_gap_without_child_blocks: eth_gap_without_child_blocks,
-        max_gas_price: max_gas_price,
-        last_block_mined: {lastchecked_parent_height, lastchecked_mined_block_num}
-      }
-    } = state
-
-    multiplier =
-      with true <- blocks_needs_be_mined?(formed_child_block_num, mined_child_block_num),
-           true <- eth_blocks_gap_filled?(parent_height, lastchecked_parent_height, eth_gap_without_child_blocks),
-           false <- new_blocks_mined?(mined_child_block_num, lastchecked_mined_block_num) do
-        gas_price_raising_factor
-      else
-        _ -> gas_price_lowering_factor
-      end
-
-    Kernel.min(
-      max_gas_price,
-      Kernel.round(multiplier * gas_price_to_use)
-    )
-  end
-
-  # Updates the state with information about last parent height and mined child block number
-  @spec update_last_checked_mined_block_num(Core.t()) :: Core.t()
-  defp update_last_checked_mined_block_num(state) do
-    {_, lastchecked_mined_block_num} = state.gas_price_adj_params.last_block_mined
-
-    if lastchecked_mined_block_num < state.mined_child_block_num do
-      %Core{
-        state
-        | gas_price_adj_params:
-            GasPriceAdjustment.with(state.gas_price_adj_params, state.parent_height, state.mined_child_block_num)
-      }
-    else
-      state
-    end
-  end
-
-  defp blocks_needs_be_mined?(formed_child_block_num, mined_child_block_num) do
-    formed_child_block_num > mined_child_block_num
-  end
-
-  defp eth_blocks_gap_filled?(parent_height, last_height, eth_gap_without_child_blocks) do
-    parent_height - last_height >= eth_gap_without_child_blocks
-  end
-
-  defp new_blocks_mined?(mined_child_block_num, last_mined_block_num) do
-    mined_child_block_num > last_mined_block_num
-  end
-
-  defp set_gas_price(state, price) do
-    %{state | gas_price_to_use: price}
   end
 
   @spec next_blknum_to_mine(Core.t()) :: pos_integer()

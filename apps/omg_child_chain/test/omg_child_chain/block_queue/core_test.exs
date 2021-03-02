@@ -19,7 +19,6 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
   import ExUnit.CaptureLog, only: [capture_log: 1]
 
   alias OMG.ChildChain.BlockQueue.Core
-  alias OMG.ChildChain.BlockQueue.GasPriceAdjustment
 
   @child_block_interval 1000
 
@@ -48,17 +47,12 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
         known_hashes: [],
         top_mined_hash: <<0::size(256)>>,
         parent_height: 0,
-        child_block_interval: @child_block_interval,
-        gas_price_adj_params: %GasPriceAdjustment{max_gas_price: 40_000_000_000}
+        child_block_interval: @child_block_interval
       )
 
-    empty_with_gas_params = %{empty | formed_child_block_num: 5000, gas_price_to_use: 100}
+    empty_with_gas_params = %{empty | formed_child_block_num: 5000}
 
     {:do_form_block, empty_with_gas_params} = Core.set_ethereum_status(empty_with_gas_params, 1, 3000, 1)
-
-    # assertions - to be explicit how state looks like
-    child_block_mined = 3000
-    assert {1, ^child_block_mined} = empty_with_gas_params.gas_price_adj_params.last_block_mined
 
     {:ok,
      %{empty: empty, empty_with_gas_params: empty_with_gas_params, empty_high_max_gas_price: empty_high_max_gas_price}}
@@ -449,219 +443,6 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
                |> elem(1)
                |> Core.enqueue_block("1", 1000, 0)
                |> Core.enqueue_block("2", 2000, 0)
-               |> Core.get_blocks_to_submit()
-    end
-
-    #
-    # GAS PRICE CALCULATION TESTS
-    #
-
-    test "Fresh block to submit gets the initial gas price", %{empty_high_max_gas_price: empty} do
-      assert [%{gas_price: 20_000_000_000}] =
-               empty
-               |> Core.enqueue_block("1", 1000, 0)
-               |> Core.get_blocks_to_submit()
-    end
-
-    test "Fresh block to submit gets the initial gas price, even if ethereum progressed before",
-         %{empty_high_max_gas_price: empty} do
-      assert [%{gas_price: 20_000_000_000}] =
-               empty
-               |> Core.set_ethereum_status(10, 0, 1)
-               |> elem(1)
-               |> Core.enqueue_block("1", 1000, 10)
-               |> Core.get_blocks_to_submit()
-    end
-
-    test "Blocks enqueued in sequence both get the initial gas price", %{empty_high_max_gas_price: empty} do
-      assert [%{gas_price: 20_000_000_000}, %{gas_price: 20_000_000_000}] =
-               empty
-               |> Core.set_ethereum_status(0, 0, 1)
-               |> elem(1)
-               |> Core.enqueue_block("1", 1000, 0)
-               |> Core.enqueue_block("2", 2000, 0)
-               |> Core.get_blocks_to_submit()
-    end
-
-    # NOTE: This behavior is strange - revisit along with the other ones (see `NOTEs` here)
-    #       Why would detecting the exact height of enqueue cause the price to raise - we don't know if there's need to
-    test "Despite progressing to enqueue height price may raise", %{empty_high_max_gas_price: empty} do
-      assert [%{gas_price: 40_000_000_000}] =
-               empty
-               |> Core.set_ethereum_status(0, 0, 1)
-               |> elem(1)
-               |> Core.enqueue_block("1", 1000, 10)
-               |> Core.set_ethereum_status(10, 0, 1)
-               |> elem(1)
-               |> Core.get_blocks_to_submit()
-    end
-
-    test "Progressing above threshold eth height raises price", %{empty_high_max_gas_price: empty} do
-      assert [%{gas_price: 40_000_000_000}] =
-               empty
-               |> Core.set_ethereum_status(0, 0, 1)
-               |> elem(1)
-               |> Core.enqueue_block("1", 1000, 0)
-               |> Core.set_ethereum_status(2, 0, 1)
-               |> elem(1)
-               |> Core.get_blocks_to_submit()
-    end
-
-    # NOTE: this behavior is strange - why would progressing without mining a child block lower price at all?
-    test "Progressing below threshold eth height lowers price", %{empty_high_max_gas_price: empty} do
-      assert [%{gas_price: 18_000_000_000}] =
-               empty
-               |> Core.set_ethereum_status(0, 0, 1)
-               |> elem(1)
-               |> Core.enqueue_block("1", 1000, 0)
-               |> Core.set_ethereum_status(1, 0, 1)
-               |> elem(1)
-               |> Core.get_blocks_to_submit()
-    end
-
-    # NOTE: this behavior is strange - why would progressing without mining a child block lower price at all?
-    #       if there wasnt the progression to `1`, gas price would be higher 40GWei, see above
-    test "Gradual progressing above threshold lowers then raises price", %{empty_high_max_gas_price: empty} do
-      assert [%{gas_price: 36_000_000_000}] =
-               empty
-               |> Core.set_ethereum_status(0, 0, 1)
-               |> elem(1)
-               |> Core.enqueue_block("1", 1000, 0)
-               |> Core.set_ethereum_status(1, 0, 1)
-               |> elem(1)
-               |> Core.set_ethereum_status(2, 0, 1)
-               |> elem(1)
-               |> Core.get_blocks_to_submit()
-    end
-
-    test "Successful mining at threshold lowers price", %{empty_high_max_gas_price: empty} do
-      assert [%{gas_price: 16_200_000_000}] =
-               empty
-               |> Core.set_ethereum_status(0, 0, 1)
-               |> elem(1)
-               |> Core.enqueue_block("1", 1000, 0)
-               |> Core.set_ethereum_status(1, 0, 1)
-               |> elem(1)
-               |> Core.enqueue_block("2", 2000, 0)
-               |> Core.set_ethereum_status(2, 1000, 1)
-               |> elem(1)
-               |> Core.get_blocks_to_submit()
-    end
-
-    test "Lack of enqueued blocks keeps price the same, regardless of mining", %{empty_high_max_gas_price: empty} do
-      assert [%{gas_price: 20_000_000_000}] =
-               empty
-               |> Core.set_ethereum_status(0, 0, 1)
-               |> elem(1)
-               |> Core.enqueue_block("1", 1000, 0)
-               |> Core.set_ethereum_status(1, 1000, 1)
-               |> elem(1)
-               |> Core.enqueue_block("2", 2000, 0)
-               |> Core.get_blocks_to_submit()
-    end
-
-    test "Ethereum backoff keeps the same gas price", %{empty_high_max_gas_price: empty} do
-      assert [%{gas_price: 20_000_000_000}] =
-               empty
-               |> Core.set_ethereum_status(0, 0, 1)
-               |> elem(1)
-               |> Core.enqueue_block("1", 1000, 0)
-               |> Core.set_ethereum_status(10, 1000, 1)
-               |> elem(1)
-               |> Core.set_ethereum_status(8, 1000, 1)
-               |> elem(1)
-               |> Core.enqueue_block("2", 2000, 0)
-               |> Core.get_blocks_to_submit()
-    end
-
-    test "Successful immediate mining lowers price", %{empty_high_max_gas_price: empty} do
-      assert [%{gas_price: 18_000_000_000}] =
-               empty
-               |> Core.set_ethereum_status(0, 0, 1)
-               |> elem(1)
-               |> Core.enqueue_block("1", 1000, 0)
-               |> Core.enqueue_block("2", 2000, 0)
-               |> Core.set_ethereum_status(1, 1000, 1)
-               |> elem(1)
-               |> Core.get_blocks_to_submit()
-    end
-
-    test "All blocks enqueued get the same gas price", %{empty_high_max_gas_price: empty} do
-      assert [%{gas_price: 36_000_000_000}, %{gas_price: 36_000_000_000}] =
-               empty
-               |> Core.set_ethereum_status(0, 0, 1)
-               |> elem(1)
-               |> Core.enqueue_block("1", 1000, 0)
-               |> Core.set_ethereum_status(1, 0, 1)
-               |> elem(1)
-               |> Core.enqueue_block("2", 2000, 0)
-               |> Core.set_ethereum_status(2, 0, 1)
-               |> elem(1)
-               |> Core.get_blocks_to_submit()
-    end
-
-    test "Gas price calculation cannot be raised above limit", %{empty_high_max_gas_price: empty} do
-      assert [%{gas_price: 40_000_000_000}] =
-               empty
-               |> Core.set_ethereum_status(0, 0, 1)
-               |> elem(1)
-               |> Core.enqueue_block("1", 1000, 0)
-               |> Core.set_ethereum_status(1, 0, 1)
-               |> elem(1)
-               |> Core.set_ethereum_status(2, 0, 1)
-               |> elem(1)
-               |> Core.set_ethereum_status(4, 0, 1)
-               |> elem(1)
-               |> Core.get_blocks_to_submit()
-    end
-
-    test "Gas price calculation cannot be lowered below limit", %{empty_high_max_gas_price: empty} do
-      state =
-        empty
-        |> Core.set_ethereum_status(0, 0, 1)
-        |> elem(1)
-        |> Core.enqueue_block("1", 1000, 0)
-
-      # many successful submissions
-      state =
-        Enum.reduce(2..1000, state, fn eth_height, state ->
-          state
-          |> Core.set_ethereum_status(eth_height - 1, (eth_height - 2) * 1000, 1)
-          |> elem(1)
-          |> Core.enqueue_block("#{eth_height}", eth_height * 1000, eth_height - 2)
-        end)
-
-      assert [%{gas_price: 5}, %{gas_price: 5}] = Core.get_blocks_to_submit(state)
-
-      # no more successful submissions can change the price
-      assert [%{gas_price: 5}, %{gas_price: 5}] =
-               state
-               |> Core.set_ethereum_status(1000, 999_000, 1)
-               |> elem(1)
-               |> Core.enqueue_block("1001", 1_001_000, 999)
-               |> Core.get_blocks_to_submit()
-    end
-
-    test "Gas price is lowered only once, in a range of Ethereum progressions without child blocks",
-         %{empty_high_max_gas_price: empty} do
-      state =
-        empty
-        |> Core.set_ethereum_status(0, 0, 1)
-        |> elem(1)
-        |> Core.enqueue_block("1", 1000, 0)
-        |> Core.set_ethereum_status(1, 0, 1)
-        |> elem(1)
-
-      # Despite Ethereum height changing multiple times, gas price does not grow since no new blocks are mined
-      state =
-        Enum.reduce(1..10, state, fn eth_height, state ->
-          {_, state} = Core.set_ethereum_status(state, eth_height, 1000, 1)
-          state
-        end)
-
-      assert [%{gas_price: 18_000_000_000}] =
-               state
-               |> Core.enqueue_block("2", 2000, 10)
                |> Core.get_blocks_to_submit()
     end
   end
