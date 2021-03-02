@@ -30,16 +30,20 @@ defmodule OMG.ChildChain.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
 
   defp deps() do
-    [
-      {:fake_server, "~> 2.1", only: [:test], runtime: false},
-      {:telemetry, "~> 0.4.1"},
-      #
-      {:omg_bus, in_umbrella: true},
-      {:omg, in_umbrella: true},
-      {:omg_status, in_umbrella: true},
-      {:omg_db, in_umbrella: true},
-      {:omg_eth, in_umbrella: true},
-      {:omg_utils, in_umbrella: true}
-    ]
+    case Mix.env() do
+      :prod -> [{:gas, git: "https://github.com/omgnetwork/gas.git", branch: "main"}]
+      _ -> []
+    end ++
+      [
+        {:fake_server, "~> 2.1", only: [:test], runtime: false},
+        {:telemetry, "~> 0.4.1"},
+        #
+        {:omg_bus, in_umbrella: true},
+        {:omg, in_umbrella: true},
+        {:omg_status, in_umbrella: true},
+        {:omg_db, in_umbrella: true},
+        {:omg_eth, in_umbrella: true},
+        {:omg_utils, in_umbrella: true}
+      ]
   end
 end

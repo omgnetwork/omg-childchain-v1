@@ -17,7 +17,7 @@ ExUnitFixtures.start()
 # loading all fixture files from the whole umbrella project
 ExUnitFixtures.load_fixture_files()
 ExUnit.start()
-
+OMG.ChildChain.GasIntegration.create_gas_integration()
 {:ok, _} = Application.ensure_all_started(:fake_server)
 {:ok, _} = Application.ensure_all_started(:briefly)
 {:ok, _} = Application.ensure_all_started(:erlexec)

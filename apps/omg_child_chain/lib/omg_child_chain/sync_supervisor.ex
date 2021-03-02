@@ -18,7 +18,7 @@ defmodule OMG.ChildChain.SyncSupervisor do
   of the Watcher app
   """
   use Supervisor
-  use OMG.Utils.LoggerExt
+  require Logger
 
   alias OMG.Bus
   alias OMG.ChildChain.BlockQueue
@@ -29,6 +29,7 @@ defmodule OMG.ChildChain.SyncSupervisor do
   alias OMG.ChildChain.Configuration
   alias OMG.ChildChain.CoordinatorSetup
   alias OMG.ChildChain.EthereumEventAggregator
+  alias OMG.ChildChain.GasIntegration
   alias OMG.ChildChain.Monitor
   alias OMG.EthereumEventListener
   alias OMG.RootChainCoordinator
@@ -61,6 +62,7 @@ defmodule OMG.ChildChain.SyncSupervisor do
   end
 
   defp children(args) do
+    GasIntegration.create_gas_integration()
     contract_deployment_height = Keyword.fetch!(args, :contract_deployment_height)
     metrics_collection_interval = Configuration.metrics_collection_interval()
     block_queue_eth_height_check_interval_ms = Configuration.block_queue_eth_height_check_interval_ms()
