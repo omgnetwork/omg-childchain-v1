@@ -224,6 +224,7 @@ defmodule OMG.ChildChain.BlockQueue.Core do
     # %Gas{fast: 76.0, fastest: 93.0, low: 40.8, name: "Etherscan", standard: 68.0}
 
     wei_gas = round(gas_price.standard * 1_000_000_000)
+    _ = Logger.info("Using #{wei_gas} wei to submit blocks this round.")
 
     blocks
     |> Enum.filter(to_mined_block_filter(state))
