@@ -223,13 +223,13 @@ defmodule OMG.ChildChain.BlockQueue.Core do
     gas_price = apply(Gas, :get, [Gas.Integration.Pulse])
     # %Gas{fast: 76.0, fastest: 93.0, low: 40.8, name: "Etherscan", standard: 68.0}
 
-    wei_gas = gas_price.standard * 1_000_000_000
+    wei_gas = round(gas_price.standard * 1_000_000_000)
 
     blocks
     |> Enum.filter(to_mined_block_filter(state))
     |> Enum.map(fn {_blknum, block} -> block end)
     |> Enum.sort_by(& &1.num)
-    |> Enum.map(&Map.put(&1, :gas_price, gas))
+    |> Enum.map(&Map.put(&1, :gas_price, wei_gas))
   end
 
   # TODO: consider moving this logic to separate module

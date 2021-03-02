@@ -14,6 +14,9 @@
 
 defmodule OMG.ChildChain.GasIntegration do
   @moduledoc false
+  require Logger
+
+  # sobelow_skip ["RCE.CodeModule"]
   def create_gas_integration() do
     prod = Application.get_env(:omg_child_chain, :prod, false)
 
@@ -21,6 +24,8 @@ defmodule OMG.ChildChain.GasIntegration do
 
     case {prod, gas} do
       {false, false} ->
+        _ = Logger.info("MOCKING GAS INTEGRATION. SHOULD NOT HAPPEN IN DEPLOYED ENV.")
+
         ast =
           quote do
             defmodule unquote(Gas) do

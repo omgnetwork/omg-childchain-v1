@@ -156,8 +156,8 @@ check-dialyzer:
 #
 
 
-build-child_chain-prod: deps-elixir-omg
-	$(ENV_PROD) mix do compile, release child_chain --overwrite
+build-child_chain-prod:
+	$(ENV_PROD) mix do deps.get, compile, release child_chain --overwrite
 
 build-child_chain-dev: deps-elixir-omg
 	$(ENV_DEV) mix do compile, release child_chain --overwrite
