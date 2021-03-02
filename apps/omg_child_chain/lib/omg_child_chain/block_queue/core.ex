@@ -220,17 +220,25 @@ defmodule OMG.ChildChain.BlockQueue.Core do
   @spec get_blocks_to_submit(Core.t()) :: [BlockQueue.encoded_signed_tx()]
   def get_blocks_to_submit(%{blocks: blocks, formed_child_block_num: formed} = state) do
     _ = Logger.debug("preparing blocks #{inspect(next_blknum_to_mine(state))}..#{inspect(formed)} for submission")
-    gas_price = apply(Gas, :get, [Gas.Integration.Pulse])
-    # %Gas{fast: 76.0, fastest: 93.0, low: 40.8, name: "Etherscan", standard: 68.0}
-
-    wei_gas = round(gas_price.standard * 1_000_000_000)
-    _ = Logger.info("Using #{wei_gas} wei to submit blocks this round.")
 
     blocks
     |> Enum.filter(to_mined_block_filter(state))
     |> Enum.map(fn {_blknum, block} -> block end)
     |> Enum.sort_by(& &1.num)
-    |> Enum.map(&Map.put(&1, :gas_price, wei_gas))
+    |> (fn
+          [] ->
+            []
+
+          data ->
+            # we don't want to call gas data for every block, just once and if there are any
+            gas_price = apply(Gas, :get, [Gas.Integration.Pulse])
+            # %Gas{fast: 76.0, fastest: 93.0, low: 40.8, name: "Etherscan", standard: 68.0}
+            wei_gas = round(gas_price.standard * 1_000_000_000)
+            _ = Logger.info("Using #{wei_gas} wei to submit blocks this round.")
+            Process.put(:wei_gas, wei_gas)
+            data
+        end).()
+    |> Enum.map(&Map.put(&1, :gas_price, Process.get(:wei_gas)))
   end
 
   # TODO: consider moving this logic to separate module
