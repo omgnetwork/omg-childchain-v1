@@ -468,44 +468,48 @@ jobs:
       - run:
           name: Start daemon services
           command: make cabbage-start-services
-      - install_elixir:
-          cache: "test_docker_compose_release"
-          dir: "~/project"
-      - run: sh .circleci/status.sh
       - run:
           name: Log daemon services
           command: docker-compose logs -f
           background: true
       - run:
-          name: Openapi install
-          command: make install
-          working_directory: ~/project/priv/cabbage
-      - run:
-          name: API code
-          working_directory: ~/project/priv/cabbage
-          command: |
-            make generate_api_code
-      - install_elixir:
-          cache: "test_docker_compose_release_cabbage"
-          dir: "~/project/priv/cabbage"
-      - run:
-          name: Cabbage specs deps get
-          working_directory: ~/project/priv/cabbage
-          command: mix deps.get
-      - run:
           name: docker services logs
           working_directory: ~/project/
           background: true
           command: docker-compose logs -f
+      - restore_cache:
+          key: docker_compose_release-cabbage-{{ checksum "~/project/priv/cabbage/mix.lock" }}
       - run:
-          name: Run specs
-          working_directory: ~/project/priv/cabbage
+          no_output_timeout: 30m
           command: |
-            TESTFILES=$(circleci tests glob "apps/itest/test/itest/*_test.exs" | circleci tests split --split-by=timings --show-counts)
+            cd ~/project/priv/cabbage
+            TESTFILES=$(circleci tests glob "apps/itest/test/itest/*_test.exs" | circleci tests split --split-by=timings --show-counts | tr '\r\n' ' ')
             echo ${TESTFILES}
-            mix test ${TESTFILES} --trace
+            cd ~/project/
+            docker run --rm -it --network=chain_net \
+            --user=root \
+            -e FEE_CLAIMER_ADDRESS=0x24F3402Cd22F03ff81B56941fE048AD0F4EED5A1 \
+            -e MIX_ENV=test \
+            -e PLASMA_CONTRACTS_DIR=/app/data/plasma-contracts/contracts/ \
+            -e LOCALCHAIN_CONTRACT_ADDRESSES=/app/localchain_contract_addresses.env \
+            -e DOCKER=true \
+            -e WATCHER_URL=http://172.27.0.104:7434 \
+            -e WATCHER_INFO_URL=http://172.27.0.105:7534 \
+            -e CHILD_CHAIN_URL=http://172.27.0.108:9656/ \
+            -e ETHEREUM_RPC_URL=http://172.27.0.108:80 \
+            -e ETHEREUM_WS_URL=ws://172.27.0.108:81 \
+            -e EXIT_ID_SIZE=160 \
+            -e SHELL=/bin/sh \
+            -v $(pwd):/app \
+            --entrypoint /bin/sh \
+            "omisego/childchain-builder:dev-6b9e25f" -c "cd /app/priv/cabbage && apk add maven && apk add jq && make install && make generate_api_code && mix deps.get && mix test ${TESTFILES} --trace"
       - store_test_results:
           path: ~/project/priv/cabbage/_build/test/lib/itest/
+      - save_cache:
+          key: docker_compose_release-cabbage-{{ checksum "~/project/priv/cabbage/mix.lock" }}
+          paths:
+            - ~/project/priv/cabbage/deps
+            - ~/project/priv/cabbage/_build
 
   test_docker_compose_reorg:
     machine:
