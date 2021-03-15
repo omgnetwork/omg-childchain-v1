@@ -101,10 +101,23 @@ defmodule OMG.Eth.DevGeth do
       wait_for_rpc(pid)
     end
 
+    _ = Process.flag(:trap_exit, true)
+
     waiting_task
     |> Task.async()
     |> Task.await(15_000 * 2)
 
+    receive do
+      {:DOWN, _, :process, _, :normal} ->
+        _ = Logger.error("Could not start geth, gonna restart!")
+        _ = Process.flag(:trap_exit, false)
+        start()
+    after
+      2000 ->
+        :ok
+    end
+
+    _ = Process.flag(:trap_exit, false)
     pid
   end
 
