@@ -511,8 +511,6 @@ jobs:
   test_docker_compose_reorg:
     machine:
       image: ubuntu-2004:202010-01
-    environment:
-      REORG: true
     steps:
       - checkout
       - run:
@@ -557,9 +555,6 @@ jobs:
       - run:
           no_output_timeout: 30m
           command: |
-            cd ~/project/priv/cabbage
-            TESTFILES=$(circleci tests glob "apps/itest/test/itest/*_test.exs" | circleci tests split --split-by=timings --show-counts | tr '\r\n' ' ')
-            echo ${TESTFILES}
             cd ~/project/
             docker run --rm -it --network=chain_net \
             --user=root \
@@ -571,8 +566,10 @@ jobs:
             -e WATCHER_URL=http://172.27.0.104:7434 \
             -e WATCHER_INFO_URL=http://172.27.0.105:7534 \
             -e CHILD_CHAIN_URL=http://172.27.0.103:9656/ \
-            -e ETHEREUM_RPC_URL=http://172.27.0.108:80 \
-            -e ETHEREUM_WS_URL=ws://172.27.0.108:81 \
+            -e ETHEREUM_RPC_URL_1=http://172.27.0.201:80 \
+            -e ETHEREUM_WS_URL_1=ws://172.27.0.201:81 \
+            -e ETHEREUM_RPC_URL_2=http://172.27.0.202:80 \
+            -e ETHEREUM_WS_URL_2=ws://172.27.0.202:81 \
             -e EXIT_ID_SIZE=160 \
             -e SHELL=/bin/sh \
             -e REORG=true \
@@ -753,16 +750,8 @@ workflows:
           filters: *all_branches_and_tags
       - test_docker_compose_release:
           filters: *all_branches_and_tags
-      - test_docker_compose_reorg:
-           filters: &master_and_version_branches_and_all_tags
-            branches:
-              only:
-                - master
-                # vMAJOR.MINOR (e.g. v0.1, v0.2, v1.0, v2.1, etc.)
-                - /^v[0-9]+\.[0-9]+/
-            tags:
-              only:
-                - /.+/
+      # - test_docker_compose_reorg:
+      #     filters: *all_branches_and_tags
       - audit_deps:
           requires: [build]
           filters: *all_branches_and_tags
@@ -798,7 +787,7 @@ workflows:
             [
               test_docker_compose_release,
               #test_barebone_release,
-              test_docker_compose_reorg,
+              #test_docker_compose_reorg,
               child_chain_integration_tests,
               common_integration_tests,
               test,
