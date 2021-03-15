@@ -60,7 +60,7 @@ services:
       retries: 5
     networks:
       chain_net:
-        ipv4_address: 172.27.0.102
+        ipv4_address: 172.27.0.108
 
   childchain:
     image: omisego/child_chain:latest
@@ -70,7 +70,7 @@ services:
       - ./localchain_contract_addresses.env
     environment:
       - ETHEREUM_NETWORK=LOCALCHAIN
-      - ETHEREUM_RPC_URL=http://172.27.0.102:80
+      - ETHEREUM_RPC_URL=http://172.27.0.108:80
       - APP_ENV=local_docker_development
       - DD_HOSTNAME=datadog
       - DD_DISABLED=true
@@ -128,7 +128,7 @@ services:
       - ./localchain_contract_addresses.env
     environment:
       - ETHEREUM_NETWORK=LOCALCHAIN
-      - ETHEREUM_RPC_URL=http://172.27.0.102:80
+      - ETHEREUM_RPC_URL=http://172.27.0.108:80
       - CHILD_CHAIN_URL=http://172.27.0.103:9656
       - PORT=7434
       - APP_ENV=local_docker_development
@@ -168,7 +168,7 @@ services:
       - ./localchain_contract_addresses.env
     environment:
       - ETHEREUM_NETWORK=LOCALCHAIN
-      - ETHEREUM_RPC_URL=http://172.27.0.102:80
+      - ETHEREUM_RPC_URL=http://172.27.0.108:80
       - CHILD_CHAIN_URL=http://172.27.0.103:9656
       - DATABASE_URL=postgresql://omisego_dev:omisego_dev@172.27.0.100:5432/omisego_dev
       - PORT=7534
@@ -205,6 +205,7 @@ services:
 
 networks:
   chain_net:
+    name: "chain_net"
     driver: bridge
     ipam:
       config:
