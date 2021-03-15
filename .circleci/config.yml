@@ -575,6 +575,7 @@ jobs:
             -e ETHEREUM_WS_URL=ws://172.27.0.108:81 \
             -e EXIT_ID_SIZE=160 \
             -e SHELL=/bin/sh \
+            -e REORG=true \
             -v $(pwd):/app \
             --entrypoint /bin/sh \
             "omisego/childchain-builder:dev-6b9e25f" -c "cd /app/priv/cabbage && apk add maven && apk add jq && make install && make generate_api_code && mix deps.get && mix test --only deposit --trace"
