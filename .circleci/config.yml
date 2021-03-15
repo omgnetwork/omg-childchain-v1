@@ -484,7 +484,7 @@ jobs:
             cd ~/project/
             docker run --rm -it --network=chain_net \
             --user=root \
-            -e FEE_CLAIMER_ADDRESS=0x24F3402Cd22F03ff81B56941fE048AD0F4EED5A1 \
+            -e FEE_CLAIMER_ADDRESS=0x3b9f4c1dd26e0be593373b1d36cee2008cbeb837 \
             -e MIX_ENV=test \
             -e PLASMA_CONTRACTS_DIR=/app/data/plasma-contracts/contracts/ \
             -e LOCALCHAIN_CONTRACT_ADDRESSES=/app/localchain_contract_addresses.env \
