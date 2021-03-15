@@ -81,7 +81,8 @@ defmodule OMG.ChildChain.BlockQueue do
     finality_threshold = Keyword.fetch!(args, :submission_finality_margin)
     child_block_interval = Keyword.fetch!(args, :child_block_interval)
     contract_deployment_height = Keyword.fetch!(args, :contract_deployment_height)
-
+    force_block_submission_after_ms = Keyword.fetch!(args, :force_block_submission_after_ms)
+    block_has_at_least_txs_in_block = Keyword.fetch!(args, :block_has_at_least_txs_in_block)
     {:ok, parent_height} = EthereumHeight.get()
     mined_num = RootChain.get_mined_child_block()
     {top_mined_hash, _} = RootChain.blocks(mined_num)
@@ -112,7 +113,9 @@ defmodule OMG.ChildChain.BlockQueue do
         parent_height: parent_height,
         child_block_interval: child_block_interval,
         block_submit_every_nth: block_submit_every_nth,
-        finality_threshold: finality_threshold
+        finality_threshold: finality_threshold,
+        force_block_submission_after_ms: force_block_submission_after_ms,
+        block_has_at_least_txs_in_block: block_has_at_least_txs_in_block
       )
 
     {:ok, state} =
