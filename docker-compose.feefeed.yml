@@ -42,7 +42,7 @@ services:
       - SECRET_KEY_BASE="Y8naENMR8b+vbPHILjwNtEfWFrnbGi2k+UYWm75VnKHfsavmyGLtTmmeJxAGK+zJ"
       - DATADOG_DISABLED=true
       - DATADOG_HOST="localhost"
-      - ETHEREUM_NODE_URL=http://172.27.0.102:80
+      - ETHEREUM_NODE_URL=http://172.27.0.108:80
     ports:
       - "4000:4000"
     expose:

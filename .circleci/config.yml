@@ -469,10 +469,6 @@ jobs:
           name: Start daemon services
           command: make cabbage-start-services
       - run:
-          name: Log daemon services
-          command: docker-compose logs -f
-          background: true
-      - run:
           name: docker services logs
           working_directory: ~/project/
           background: true
