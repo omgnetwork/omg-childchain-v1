@@ -805,7 +805,7 @@ defmodule OMG.State.CoreTest do
   test "tells if utxo exists", %{alice: alice, state_empty: state} do
     assert not Core.utxo_exists?(Utxo.position(1, 0, 0), state)
 
-    state = state |> TestHelper.do_deposit(alice, %{amount: 10, currency: @eth, blknum: 1})
+    state = TestHelper.do_deposit(state, alice, %{amount: 10, currency: @eth, blknum: 1})
     assert Core.utxo_exists?(Utxo.position(1, 0, 0), state)
 
     state =

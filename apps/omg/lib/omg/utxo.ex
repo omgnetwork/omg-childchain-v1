@@ -41,8 +41,7 @@ defmodule OMG.Utxo do
   # NOTE: we have no migrations, so we handle data compatibility here (make_db_update/1 and from_db_kv/1), OMG-421
   def to_db_value(%__MODULE__{output: output, creating_txhash: creating_txhash})
       when is_nil_or_binary(creating_txhash) do
-    %{creating_txhash: creating_txhash}
-    |> Map.put(:output, OMG.Output.to_db_value(output))
+    Map.put(%{creating_txhash: creating_txhash}, :output, OMG.Output.to_db_value(output))
   end
 
   def from_db_value(%{output: output, creating_txhash: creating_txhash})

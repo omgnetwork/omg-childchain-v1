@@ -256,7 +256,7 @@ defmodule OMG.State.Core do
     db_updates_block = {:put, :block, Block.to_db_value(block)}
     db_updates_top_block_number = {:put, :child_top_block_number, state.height}
 
-    db_updates = [db_updates_top_block_number, db_updates_block | state.utxo_db_updates] |> Enum.reverse()
+    db_updates = Enum.reverse([db_updates_top_block_number, db_updates_block | state.utxo_db_updates])
 
     new_state = %Core{
       state
