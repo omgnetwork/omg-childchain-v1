@@ -1,7 +1,7 @@
 MAKEFLAGS += --silent
 OVERRIDING_START ?= start_iex
 OVERRIDING_VARIABLES ?= bin/variables
-SNAPSHOT ?= SNAPSHOT_MIX_EXIT_PERIOD_SECONDS_20
+SNAPSHOT ?= SNAPSHOT_MIN_EXIT_PERIOD_SECONDS_20
 BAREBUILD_ENV ?= dev
 help:
 	@echo "Dont Fear the Makefile"
@@ -80,7 +80,7 @@ all: clean build-child_chain-prod
 
 CHILD_CHAIN_IMAGE_NAME  ?= "omisego/child_chain:latest"
 
-IMAGE_BUILDER   ?= "omisegoimages/elixir-omg-builder:stable-20201207"
+IMAGE_BUILDER   ?= "omisegoimages/elixir-omg-builder:stable-20210316"
 IMAGE_BUILD_DIR ?= $(PWD)
 
 ENV_DEV         ?= env MIX_ENV=dev
@@ -313,12 +313,12 @@ cabbage-start-services-reorg:
 
 ###OTHER
 docker-start-cluster:
-	SNAPSHOT=SNAPSHOT_MIX_EXIT_PERIOD_SECONDS_120 make init_test && \
+	SNAPSHOT=SNAPSHOT_MIN_EXIT_PERIOD_SECONDS_120 make init_test && \
 	docker-compose build --no-cache && docker-compose up
 
 docker-build-start-cluster:
 	$(MAKE) docker-build
-	SNAPSHOT=SNAPSHOT_MIX_EXIT_PERIOD_SECONDS_120 make init_test && \
+	SNAPSHOT=SNAPSHOT_MIN_EXIT_PERIOD_SECONDS_120 make init_test && \
 	docker-compose build --no-cache && docker-compose up
 
 docker-stop-cluster: localchain_contract_addresses.env
@@ -357,7 +357,7 @@ docker-remote-childchain:
 ### barebone stuff
 ###
 start-services:
-	SNAPSHOT=SNAPSHOT_MIX_EXIT_PERIOD_SECONDS_120 make init_test && \
+	SNAPSHOT=SNAPSHOT_MIN_EXIT_PERIOD_SECONDS_120 make init_test && \
 	docker-compose up postgres feefeed geth nginx
 
 start-child_chain:

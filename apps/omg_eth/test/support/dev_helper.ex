@@ -63,8 +63,8 @@ defmodule Support.DevHelper do
       txhash
       |> WaitFor.eth_receipt(timeout)
       |> case do
-        {:ok, %{"status" => "0x1"} = receipt} -> {:ok, receipt |> Map.update!("blockNumber", &int_from_hex(&1))}
-        {:ok, %{"status" => "0x0"} = receipt} -> {:error, receipt |> Map.put("reason", get_reason(txhash))}
+        {:ok, %{"status" => "0x1"} = receipt} -> {:ok, Map.update!(receipt, "blockNumber", &int_from_hex(&1))}
+        {:ok, %{"status" => "0x0"} = receipt} -> {:error, Map.put(receipt, "reason", get_reason(txhash))}
         other -> other
       end
   end

@@ -142,7 +142,7 @@ defmodule OMG.RocksDBTest do
 
   defp restart(dir, pid) do
     :ok = GenServer.stop(pid)
-    name = :"TestDB_#{make_ref() |> inspect()}"
+    name = :"TestDB_#{inspect(make_ref())}"
     {:ok, pid} = start_supervised(OMG.DB.child_spec(db_path: dir, name: name), restart: :temporary)
     pid
   end

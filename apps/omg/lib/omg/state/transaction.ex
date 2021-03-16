@@ -83,8 +83,7 @@ defmodule OMG.State.Transaction do
   end
 
   defp encode(transaction) do
-    Transaction.Protocol.get_data_for_rlp(transaction)
-    |> ExRLP.encode()
+    ExRLP.encode(Transaction.Protocol.get_data_for_rlp(transaction))
   end
 
   defp hash(tx) do

@@ -82,21 +82,21 @@ defmodule OMG.TestHelper do
           Transaction.metadata()
         ) :: Transaction.Recovered.t()
   def create_recovered(inputs, currency, outputs, metadata \\ @empty_metadata) do
-    create_encoded(inputs, currency, outputs, metadata) |> Transaction.Recovered.recover_from!()
+    Transaction.Recovered.recover_from!(create_encoded(inputs, currency, outputs, metadata))
   end
 
   @spec create_recovered(
           list({pos_integer, non_neg_integer, 0 | 1, map}),
           list({map, Transaction.Payment.currency(), pos_integer})
         ) :: Transaction.Recovered.t()
-  def create_recovered(inputs, outputs), do: create_encoded(inputs, outputs) |> Transaction.Recovered.recover_from!()
+  def create_recovered(inputs, outputs), do: Transaction.Recovered.recover_from!(create_encoded(inputs, outputs))
 
   def create_encoded(inputs, currency, outputs, metadata \\ @empty_metadata) do
-    create_signed(inputs, currency, outputs, metadata) |> Transaction.Signed.encode()
+    Transaction.Signed.encode(create_signed(inputs, currency, outputs, metadata))
   end
 
   def create_encoded(inputs, outputs) do
-    create_signed(inputs, outputs) |> Transaction.Signed.encode()
+    Transaction.Signed.encode(create_signed(inputs, outputs))
   end
 
   def create_encoded_fee_tx(blknum, owner, currency, amount) do
@@ -125,8 +125,8 @@ defmodule OMG.TestHelper do
   def create_signed(inputs, currency, outputs, metadata \\ @empty_metadata) do
     raw_tx =
       Transaction.Payment.new(
-        inputs |> Enum.map(fn {blknum, txindex, oindex, _} -> {blknum, txindex, oindex} end),
-        outputs |> Enum.map(fn {owner, amount} -> {owner.addr, currency, amount} end),
+        Enum.map(inputs, fn {blknum, txindex, oindex, _} -> {blknum, txindex, oindex} end),
+        Enum.map(outputs, fn {owner, amount} -> {owner.addr, currency, amount} end),
         metadata
       )
 
