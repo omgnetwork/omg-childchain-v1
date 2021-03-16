@@ -83,9 +83,7 @@ defmodule OMG.Utils.HttpRPC.Validator.Base do
   @spec all_success_or_error([{:ok, any()} | {:error, any()}]) :: list() | {:error, any()}
   def all_success_or_error(result_list) do
     with nil <- Enum.find(result_list, &(:error == Kernel.elem(&1, 0))),
-         do:
-           result_list
-           |> Enum.map(fn {:ok, elt} -> elt end)
+         do: Enum.map(result_list, fn {:ok, elt} -> elt end)
   end
 
   @doc """
@@ -180,7 +178,7 @@ defmodule OMG.Utils.HttpRPC.Validator.Base do
     end
 
     val
-    |> Enum.reduce_while([], fn elt, acc -> mapper.(elt) |> list_reducer.(acc) end)
+    |> Enum.reduce_while([], fn elt, acc -> list_reducer.(mapper.(elt), acc) end)
     |> case do
       list when is_list(list) ->
         {Enum.reverse(list), []}

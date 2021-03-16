@@ -38,8 +38,7 @@ defmodule OMG.State.Transaction.Signed do
   """
   @spec encode(t()) :: tx_bytes()
   def encode(%__MODULE__{raw_tx: %{} = raw_tx, sigs: sigs}) do
-    [sigs | Transaction.Protocol.get_data_for_rlp(raw_tx)]
-    |> ExRLP.encode()
+    ExRLP.encode([sigs | Transaction.Protocol.get_data_for_rlp(raw_tx)])
   end
 
   @doc """

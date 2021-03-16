@@ -371,9 +371,7 @@ defmodule OMG.ChildChain.BlockQueue.CoreTest do
                |> Core.set_ethereum_status(1, 0, 1)
 
       # no enqueue
-      assert {:dont_form_block, queue} =
-               queue
-               |> Core.set_ethereum_status(1, 0, 1)
+      assert {:dont_form_block, queue} = Core.set_ethereum_status(queue, 1, 0, 1)
 
       assert {:dont_form_block, _} =
                queue
