@@ -753,8 +753,8 @@ workflows:
           filters: *all_branches_and_tags
       - test_docker_compose_release:
           filters: *all_branches_and_tags
-      - test_docker_compose_reorg:
-          filters: *all_branches_and_tags
+      # - test_docker_compose_reorg:
+      #     filters: *all_branches_and_tags
       - audit_deps:
           requires: [build]
           filters: *all_branches_and_tags
