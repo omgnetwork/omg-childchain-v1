@@ -19,12 +19,12 @@ executors:
 
   builder:
     docker:
-      - image: omisegoimages/elixir-omg-builder:stable-20201207
+      - image: omisegoimages/elixir-omg-builder:stable-20210316
     working_directory: ~/src
 
   builder_pg:
     docker:
-      - image: omisegoimages/elixir-omg-builder:stable-20201207
+      - image: omisegoimages/elixir-omg-builder:stable-20210316
       - image: circleci/postgres:9.6-alpine
         environment:
           POSTGRES_USER: omisego_dev
@@ -34,7 +34,7 @@ executors:
 
   builder_pg_geth:
     docker:
-      - image: omisegoimages/elixir-omg-tester:stable-20201207
+      - image: omisegoimages/elixir-omg-tester:stable-20210316
       - image: circleci/postgres:9.6-alpine
         environment:
           POSTGRES_USER: omisego_dev
@@ -44,7 +44,7 @@ executors:
 
   deployer:
     docker:
-      - image: omisegoimages/elixir-omg-deploy:stable-20201207
+      - image: omisegoimages/elixir-omg-deploy:stable-20210316
     working_directory: ~/src
 
 commands:
@@ -450,7 +450,7 @@ jobs:
     machine:
       image: ubuntu-2004:202010-01
     environment:
-      SNAPSHOT: SNAPSHOT_MIX_EXIT_PERIOD_SECONDS_120
+      SNAPSHOT: SNAPSHOT_MIN_EXIT_PERIOD_SECONDS_120
     parallelism: 4
     steps:
       - checkout
@@ -566,14 +566,15 @@ jobs:
             -e WATCHER_URL=http://172.27.0.104:7434 \
             -e WATCHER_INFO_URL=http://172.27.0.105:7534 \
             -e CHILD_CHAIN_URL=http://172.27.0.103:9656/ \
-            -e ETHEREUM_RPC_URL_1=http://172.27.0.201:80 \
-            -e ETHEREUM_WS_URL_1=ws://172.27.0.201:81 \
-            -e ETHEREUM_RPC_URL_2=http://172.27.0.202:80 \
-            -e ETHEREUM_WS_URL_2=ws://172.27.0.202:81 \
+            -e ETHEREUM_RPC_URL_1=http://172.27.0.201:9000 \
+            -e ETHEREUM_WS_URL_1=ws://172.27.0.201:9003 \
+            -e ETHEREUM_RPC_URL_2=http://172.27.0.202:9001 \
+            -e ETHEREUM_WS_URL_2=ws://172.27.0.202:9004 \
             -e EXIT_ID_SIZE=160 \
             -e SHELL=/bin/sh \
             -e REORG=true \
             -v $(pwd):/app \
+            -v /var/run/docker.sock:/var/run/docker.sock \
             --entrypoint /bin/sh \
             "omisego/childchain-builder:dev-6b9e25f" -c "cd /app/priv/cabbage && apk add maven && apk add jq && make install && make generate_api_code && mix deps.get && mix test --only deposit --trace"
       - store_test_results:
@@ -750,8 +751,8 @@ workflows:
           filters: *all_branches_and_tags
       - test_docker_compose_release:
           filters: *all_branches_and_tags
-      # - test_docker_compose_reorg:
-      #     filters: *all_branches_and_tags
+      - test_docker_compose_reorg:
+          filters: *all_branches_and_tags
       - audit_deps:
           requires: [build]
           filters: *all_branches_and_tags

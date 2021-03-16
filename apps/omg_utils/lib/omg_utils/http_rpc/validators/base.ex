@@ -197,8 +197,8 @@ defmodule OMG.Utils.HttpRPC.Validator.Base do
   defp validate({validator, args}, acc), do: Kernel.apply(__MODULE__, validator, [acc, args])
 
   defp replace_aliases(validators) do
-    validators
-    |> Enum.reduce(
+    Enum.reduce(
+      validators,
       [],
       fn v, acc ->
         key = validator_name(v)

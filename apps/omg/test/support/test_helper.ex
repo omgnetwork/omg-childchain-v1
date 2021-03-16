@@ -125,8 +125,8 @@ defmodule OMG.TestHelper do
   def create_signed(inputs, currency, outputs, metadata \\ @empty_metadata) do
     raw_tx =
       Transaction.Payment.new(
-        inputs |> Enum.map(fn {blknum, txindex, oindex, _} -> {blknum, txindex, oindex} end),
-        outputs |> Enum.map(fn {owner, amount} -> {owner.addr, currency, amount} end),
+        Enum.map(inputs, fn {blknum, txindex, oindex, _} -> {blknum, txindex, oindex} end),
+        Enum.map(outputs, fn {owner, amount} -> {owner.addr, currency, amount} end),
         metadata
       )
 

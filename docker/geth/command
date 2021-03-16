@@ -20,13 +20,13 @@ geth \
 --keystore ./data/geth/keystore/ \
 --password /data/geth-blank-password \
 --unlock "0,1" \
---rpc \
---rpcapi personal,web3,eth,net  \
---rpcaddr 0.0.0.0  \
---rpcvhosts=* \
---rpcport=${RPC_PORT} \
+--http \
+--http.api personal,web3,eth,net  \
+--http.addr 0.0.0.0  \
+--http.vhosts=* \
+--http.port=${RPC_PORT} \
 --ws  \
---wsaddr 0.0.0.0  \
---wsorigins='*' \
+--ws.addr 0.0.0.0  \
+--ws.origins='*' \
 --mine \
 --allow-insecure-unlock
