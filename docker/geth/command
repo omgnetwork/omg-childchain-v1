@@ -10,13 +10,12 @@ geth \
 --verbosity 1 \
 --miner.gastarget 7500000 \
 --nousb \
---miner.gasprice "10" \
 --nodiscover \
 --maxpeers 0 \
 --datadir data/ \
 --syncmode 'fast' \
 --networkid 1337 \
---gasprice '1' \
+--miner.gasprice  '1' \
 --keystore ./data/geth/keystore/ \
 --password /data/geth-blank-password \
 --unlock "0,1" \
