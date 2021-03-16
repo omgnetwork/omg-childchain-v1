@@ -566,6 +566,8 @@ jobs:
             -e WATCHER_URL=http://172.27.0.104:7434 \
             -e WATCHER_INFO_URL=http://172.27.0.105:7534 \
             -e CHILD_CHAIN_URL=http://172.27.0.103:9656/ \
+            -e ETHEREUM_RPC_URL=http://172.27.0.201:8545 \
+            -e ETHEREUM_WS_URL=ws://172.27.0.201:8546 \
             -e ETHEREUM_RPC_URL_1=http://172.27.0.201:8545 \
             -e ETHEREUM_WS_URL_1=ws://172.27.0.201:8546 \
             -e ETHEREUM_RPC_URL_2=http://172.27.0.202:8545 \
