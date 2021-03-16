@@ -553,7 +553,7 @@ jobs:
           key: docker_compose_release-cabbage-{{ checksum "~/project/priv/cabbage/mix.lock" }}
       - run: sh .circleci/status.sh
       - run:
-          no_output_timeout: 30m
+          no_output_timeout: 60m
           command: |
             cd ~/project/
             docker run --rm -it --network=chain_net \
