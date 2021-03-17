@@ -82,7 +82,7 @@ defmodule OMG.ChildChain.BlockQueue.Core.BlockForming do
 
     case state.force_block_submission_countdown do
       nil ->
-        Logger.info("Skipping forming block because: #{inspect(log_data)}")
+        Logger.debug("Skipping forming block because: #{inspect(log_data)}")
 
       _ ->
         Map.merge(log_data, %{
@@ -90,7 +90,7 @@ defmodule OMG.ChildChain.BlockQueue.Core.BlockForming do
             Time.diff(Time.utc_now(), state.force_block_submission_countdown, :millisecond)
         })
 
-        Logger.info("Skipping forming block because: #{inspect(log_data)}")
+        Logger.debug("Skipping forming block because: #{inspect(log_data)}")
     end
   end
 end
