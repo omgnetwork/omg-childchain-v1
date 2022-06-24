@@ -451,6 +451,7 @@ jobs:
       image: ubuntu-2004:202010-01
     environment:
       SNAPSHOT: SNAPSHOT_MIN_EXIT_PERIOD_SECONDS_120
+      OPENAPI_GENERATOR_VERSION: 5.3.1
     parallelism: 4
     steps:
       - checkout
@@ -497,6 +498,7 @@ jobs:
             -e ETHEREUM_WS_URL=ws://172.27.0.108:81 \
             -e EXIT_ID_SIZE=160 \
             -e SHELL=/bin/sh \
+            -e OPENAPI_GENERATOR_VERSION=5.3.1 \
             -v $(pwd):/app \
             --entrypoint /bin/sh \
             "omisego/childchain-builder:dev-6b9e25f" -c "cd /app/priv/cabbage && apk add maven && apk add jq && make install && make generate_api_code && mix deps.get && mix test ${TESTFILES} --trace"
@@ -667,10 +669,10 @@ jobs:
     environment:
       CHART_NAME: childchain
       HELM_CHART_REPO: helm-development
-      UPDATE_DEV: false
+      UPDATE_DEV: true
     steps:
       - checkout
-      - run: APP_VERSION="${CIRCLE_TAG#*v}" sh .circleci/ci_increase_chart_version.sh
+      - run: APP_VERSION="$(echo "$CIRCLE_SHA1" | head -c 7)" sh .circleci/ci_increase_chart_version.sh
 
   notify_services:
     executor: builder_pg
