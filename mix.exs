@@ -14,8 +14,7 @@ defmodule OMG.Umbrella.MixProject do
       dialyzer: dialyzer(),
       test_paths: test_paths(),
       aliases: aliases(),
-      # Docs
-      source_url: "https://github.com/omisego/elixir-omg",
+      source_url: "https://github.com/omgnetwork/elixir-omg",
       version: current_version(),
       releases: [
         child_chain: [
